@@ -7,18 +7,15 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.text.TextPaint
-import com.alamkanak.weekview.Constants.UNINITIALIZED
 import java.util.Calendar
+import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
 typealias DateFormatter = (Calendar) -> String
 typealias TimeFormatter = (Int) -> String
 
-internal class WeekViewConfigWrapper(
-    private val view: WeekView<*>,
-    private val config: WeekViewConfig
-) {
+internal class ViewState constructor(private val config: Config) {
 
     private val _timeTextPaint: TextPaint = TextPaint(ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.RIGHT
@@ -32,9 +29,9 @@ internal class WeekViewConfigWrapper(
             typeface = config.typeface
         }
 
-    var timeTextWidth: Float = 0.toFloat()
+    var timeTextWidth: Float = 0f
 
-    var timeTextHeight: Float = 0.toFloat()
+    var timeTextHeight: Float = 0f
 
     private val _headerTextPaint: TextPaint = TextPaint(ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
@@ -57,7 +54,7 @@ internal class WeekViewConfigWrapper(
 
     var headerTextHeight: Float = headerTextPaint.descent() - headerTextPaint.ascent()
 
-    var headerHeight: Float = 0.toFloat()
+    var headerHeight: Float = 0f
 
     private val _todayHeaderTextPaint: TextPaint = TextPaint(ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
@@ -70,7 +67,7 @@ internal class WeekViewConfigWrapper(
             color = config.todayHeaderTextColor
         }
 
-    private var currentAllDayEventHeight: Int = 0
+    var currentAllDayEventHeight: Int = 0
 
     // Dates in the past have origin.x > 0, dates in the future have origin.x < 0
     var currentOrigin = PointF(0f, 0f)
@@ -169,7 +166,7 @@ internal class WeekViewConfigWrapper(
             color = config.nowLineDotColor
         }
 
-    var timeColumnWidth: Float = UNINITIALIZED
+    var timeColumnWidth: Float = 0f
 
     private val _eventTextPaint: TextPaint = TextPaint(ANTI_ALIAS_FLAG or LINEAR_TEXT_FLAG).apply {
         style = Paint.Style.FILL
@@ -206,9 +203,7 @@ internal class WeekViewConfigWrapper(
             color = config.timeColumnBackgroundColor
         }
 
-    var hasEventInHeader: Boolean = false
-
-    var newHourHeight: Float = UNINITIALIZED
+    var newHourHeight: Float = 0f
 
     var minDate: Calendar? = null
     var maxDate: Calendar? = null
@@ -462,7 +457,7 @@ internal class WeekViewConfigWrapper(
         get() = _weekNumberTextPaint.apply {
             color = weekNumberTextColor
             textSize = weekNumberTextSize.toFloat()
-            typeface = this@WeekViewConfigWrapper.typeface
+            typeface = this@ViewState.typeface
         }
 
     private val _weekNumberBackgroundPaint: Paint = Paint(ANTI_ALIAS_FLAG)
@@ -573,7 +568,7 @@ internal class WeekViewConfigWrapper(
         get() = config.maxHour - config.minHour
 
     val minutesPerDay: Int
-        get() = (hoursPerDay * Constants.MINUTES_PER_HOUR).toInt()
+        get() = hoursPerDay * 60
 
     val timeRange: IntRange
         get() {
@@ -643,6 +638,76 @@ internal class WeekViewConfigWrapper(
             config.typeface = value
         }
 
+    var scrollToDate: Calendar? = null
+    var scrollToHour: Int? = null
+
+    var viewWidth: Int = 0
+    var viewHeight: Int = 0
+
+    var isFirstDraw = true
+    var areDimensionsInvalid = true
+
+    var firstVisibleDate: Calendar = today()
+
+    private var startPixel = 0f
+
+    val startPixels = mutableListOf<Float>()
+    val dateRange = mutableListOf<Calendar>()
+    val dateRangeWithStartPixels = mutableListOf<Pair<Calendar, Float>>()
+
+    fun updateDrawingContext() {
+        val originX = currentOrigin.x
+        val daysFromOrigin = ceil(originX / totalDayWidth).toInt() * (-1)
+        startPixel = timeColumnWidth + originX + totalDayWidth * daysFromOrigin
+
+        val start = daysFromOrigin + 1
+        val end = start + numberOfVisibleDays
+
+        // If the user is scrolling, a new view becomes partially visible, so we must add an
+        // additional date to the date range
+        val isNotScrolling = originX % totalDayWidth == 0f
+        val modifiedEnd = if (isNotScrolling) end - 1 else end
+
+        dateRange.clear()
+        dateRange += createDateRange(start, modifiedEnd)
+
+        updateStartPixels()
+
+        dateRangeWithStartPixels.clear()
+        dateRangeWithStartPixels += dateRange.zip(startPixels)
+    }
+
+    private fun updateStartPixels() {
+        startPixels.clear()
+        startPixels += dateRange.indices.map {
+            index -> startPixel + index * totalDayWidth
+        }
+    }
+
+    fun updateViewState() {
+        // val totalHeaderHeight = getTotalHeaderHeight().toInt()
+        val dynamicHourHeight = (viewHeight - headerHeight.toInt()) / hoursPerDay
+
+        if (areDimensionsInvalid) {
+            config.effectiveMinHourHeight = max(config.minHourHeight, dynamicHourHeight)
+            areDimensionsInvalid = false
+        }
+
+        if (isFirstDraw) {
+            moveCurrentOriginIfFirstDraw()
+            isFirstDraw = false
+        }
+    }
+
+    fun onSizeChanged(width: Int, height: Int) {
+        viewWidth = width
+        viewHeight = height
+    }
+
+    fun invalidate() {
+        areDimensionsInvalid = false
+    }
+
     fun update() {
         refreshAfterZooming()
         updateVerticalOrigin()
@@ -653,7 +718,7 @@ internal class WeekViewConfigWrapper(
     }
 
     fun calculateWidthPerDay() {
-        val viewWidth = view.width.toFloat()
+        val viewWidth = viewWidth.toFloat()
         val availableWidth = viewWidth - timeColumnWidth - columnGap * numberOfVisibleDays
         widthPerDay = availableWidth / numberOfVisibleDays
     }
@@ -667,7 +732,7 @@ internal class WeekViewConfigWrapper(
         refreshHeaderHeight()
     }
 
-    fun moveCurrentOriginIfFirstDraw() {
+    private fun moveCurrentOriginIfFirstDraw() {
         // If the week view is being drawn for the first time, then consider the first day of the
         // week.
         val today = today()
@@ -680,7 +745,7 @@ internal class WeekViewConfigWrapper(
         }
 
         if (showCurrentTimeFirst) {
-            scrollToCurrentTime(view)
+            scrollToCurrentTime()
         }
 
         // Overwrites the origin when today is out of date range
@@ -688,7 +753,7 @@ internal class WeekViewConfigWrapper(
         currentOrigin.x = max(currentOrigin.x, minX)
     }
 
-    private fun scrollToCurrentTime(view: WeekView<*>) {
+    private fun scrollToCurrentTime() {
         val desired = now()
         if (desired.hour > minHour) {
             // Add some padding above the current time (and thus: the now line)
@@ -699,9 +764,9 @@ internal class WeekViewConfigWrapper(
         val maxTime = now().withTime(hour = maxHour, minutes = 0)
         desired.limitBy(minTime, maxTime)
 
-        val fraction = desired.minute.toFloat() / Constants.MINUTES_PER_HOUR
+        val fraction = desired.hourFraction
         val verticalOffset = hourHeight * (desired.hour + fraction)
-        val desiredOffset = totalDayHeight - view.height
+        val desiredOffset = totalDayHeight - viewHeight
 
         currentOrigin.y = min(desiredOffset, verticalOffset) * -1
     }
@@ -742,7 +807,7 @@ internal class WeekViewConfigWrapper(
             return
         }
 
-        val height = view.height
+        val height = viewHeight
         val dayHeight = hourHeight * hoursPerDay
 
         val isNotFillingEntireHeight = dayHeight < height
@@ -759,22 +824,22 @@ internal class WeekViewConfigWrapper(
 
             currentOrigin.y = currentOrigin.y / hourHeight * newHourHeight
             hourHeight = newHourHeight
-            newHourHeight = UNINITIALIZED
+            newHourHeight = 0f
         }
     }
 
     private fun updateVerticalOrigin() {
         // If the new currentOrigin.y is invalid, make it valid.
         val dayHeight = hourHeight * hoursPerDay
-        val potentialNewVerticalOrigin = view.height - (dayHeight + headerHeight)
+        val potentialNewVerticalOrigin = viewHeight - (dayHeight + headerHeight)
 
         currentOrigin.y = max(currentOrigin.y, potentialNewVerticalOrigin)
         currentOrigin.y = min(currentOrigin.y, 0f)
     }
 
-    fun getTotalHeaderHeight(): Float {
-        return headerHeight + headerRowPadding * 2f
-    }
+//    fun getTotalHeaderHeight(): Float {
+//        return headerHeight + headerRowPadding * 2f
+//    }
 
     fun getPastBackgroundPaint(useWeekendColor: Boolean): Paint {
         return if (useWeekendColor) pastWeekendBackgroundPaint else pastBackgroundPaint
@@ -793,32 +858,23 @@ internal class WeekViewConfigWrapper(
         newHourHeight = hourHeight
     }
 
-    fun refreshHeaderHeight() {
+    private fun refreshHeaderHeight() {
         headerHeight = headerRowPadding * 2 + headerTextHeight
 
         if (showHeaderRowBottomLine) {
             headerHeight += headerRowBottomLinePaint.strokeWidth
         }
 
-        if (hasEventInHeader) {
+        if (currentAllDayEventHeight > 0) {
             headerHeight += currentAllDayEventHeight.toFloat()
+            headerHeight += headerRowPadding / 2
         }
 
         if (showCompleteDay) {
-            hourHeight = (view.height - headerHeight) / hoursPerDay
+            hourHeight = (viewHeight - headerHeight) / hoursPerDay
             newHourHeight = hourHeight
         }
     }
-
-    /**
-     * Initializes the time column width with the widest hour label.
-     */
-//    private fun initTextTimeWidth() {
-//        timeTextWidth = (0 until hoursPerDay)
-//            .map { _timeFormatter(it) }
-//            .map { timeTextPaint.measureText(it) }
-//            .max() ?: 0f
-//    }
 
     private fun initTimeColumnTextBounds() {
         val textLayouts = timeRange

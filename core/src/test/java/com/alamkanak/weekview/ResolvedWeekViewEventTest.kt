@@ -10,7 +10,7 @@ import org.mockito.Mockito.`when` as whenever
 
 class ResolvedWeekViewEventTest {
 
-    private val config = Mockito.mock(WeekViewConfigWrapper::class.java)
+    private val config = Mockito.mock(ViewState::class.java)
     private val eventSplitter = WeekViewEventSplitter<Unit>(config)
 
     init {

@@ -181,5 +181,5 @@ internal class LegacyEventsLoader<T>(
         period: Period
     ) = onMonthChangeListener
         .onMonthChange(period.startDate, period.endDate)
-        .map { it.toResolvedWeekViewEvent(context) }
+        .map { it.resolve(context) }
 }

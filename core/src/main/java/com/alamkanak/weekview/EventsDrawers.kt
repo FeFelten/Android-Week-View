@@ -1,17 +1,19 @@
 package com.alamkanak.weekview
 
 import android.graphics.Canvas
+import android.text.StaticLayout
+import androidx.collection.ArrayMap
 import java.util.Calendar
 
 internal class SingleEventsDrawer<T>(
-    config: WeekViewConfigWrapper,
+    private val viewState: ViewState,
     private val chipsCache: EventChipsCache<T>
 ) : Drawer {
 
-    private val eventChipDrawer = EventChipDrawer<T>(config)
+    private val eventChipDrawer = EventChipDrawer<T>(viewState)
 
-    override fun draw(drawingContext: DrawingContext, canvas: Canvas) {
-        for (date in drawingContext.dateRange) {
+    override fun draw(canvas: Canvas) {
+        for (date in viewState.dateRange) {
             drawEventsForDate(date, canvas)
         }
     }
@@ -20,38 +22,25 @@ internal class SingleEventsDrawer<T>(
         date: Calendar,
         canvas: Canvas
     ) {
-        chipsCache
-            .normalEventChipsByDate(date)
-            .filter { it.bounds != null }
-            .forEach { eventChipDrawer.draw(it, canvas) }
+        val chips = chipsCache.normalEventChipsByDate(date)
+        val valid = chips.filterNot { it.bounds.isEmpty }
+        valid.forEach { eventChipDrawer.draw(it, canvas) }
     }
 }
 
 internal class AllDayEventsDrawer<T>(
-    private val config: WeekViewConfigWrapper,
-    private val cache: WeekViewCache<T>
-) : CachingDrawer {
+    viewState: ViewState,
+    private val cache: ArrayMap<EventChip<T>, StaticLayout>
+) : Drawer {
 
-    private val eventChipDrawer = EventChipDrawer<T>(config)
+    private val eventChipDrawer = EventChipDrawer<T>(viewState)
 
-    override fun draw(
-        drawingContext: DrawingContext,
-        canvas: Canvas
-    ) {
-        val left = config.timeColumnWidth
-        val top = 0f
-        val right = canvas.width.toFloat()
-        val bottom = config.getTotalHeaderHeight()
-
-        canvas.drawInRect(left, top, right, bottom) {
-            val eventChips = cache.allDayEventLayouts
-            for ((eventChip, textLayout) in eventChips) {
-                eventChipDrawer.draw(eventChip, canvas, textLayout)
-            }
+    override fun draw(canvas: Canvas) {
+        for ((eventChip, textLayout) in cache) {
+            eventChipDrawer.draw(eventChip, canvas, textLayout)
         }
     }
-
-    override fun clear() {
-        cache.clearAllDayEventLayouts()
-    }
+//    override fun clear() {
+//        cache.clear()
+//    }
 }

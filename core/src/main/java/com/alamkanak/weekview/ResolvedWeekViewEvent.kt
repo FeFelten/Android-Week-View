@@ -4,7 +4,7 @@ import android.content.Context
 import java.util.Calendar
 import kotlin.math.roundToInt
 
-internal fun <T> WeekViewDisplayable<T>.toResolvedWeekViewEvent(
+internal fun <T> WeekViewDisplayable<T>.resolve(
     context: Context
 ) = toWeekViewEvent().resolve(context)
 

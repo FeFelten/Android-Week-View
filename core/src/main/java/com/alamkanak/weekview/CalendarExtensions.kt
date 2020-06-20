@@ -1,10 +1,11 @@
 package com.alamkanak.weekview
 
-import com.alamkanak.weekview.Constants.DAY_IN_MILLIS
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.roundToInt
+
+private const val DAY_IN_MILLIS = 1000L * 60L * 60L * 24L
 
 internal interface Duration {
     val inMillis: Int
@@ -116,6 +117,13 @@ internal operator fun Calendar.minusAssign(millis: Millis) {
     add(Calendar.MILLISECOND, millis.millis * (-1))
 }
 
+internal fun Calendar.daysTo(other: Calendar): Int {
+    return ((timeInMillis - other.timeInMillis) / DAY_IN_MILLIS).toInt()
+}
+
+internal val Calendar.hourFraction: Float
+    get() = minute / 60f
+
 internal fun Calendar.isBefore(other: Calendar) = timeInMillis < other.timeInMillis
 
 internal fun Calendar.isAfter(other: Calendar) = timeInMillis > other.timeInMillis
@@ -194,7 +202,7 @@ internal fun firstDayOfYear(): Calendar {
     }
 }
 
-internal fun WeekViewConfigWrapper.createDateRange(start: Int, end: Int): List<Calendar> {
+internal fun ViewState.createDateRange(start: Int, end: Int): List<Calendar> {
     val firstDate = today()
     firstDate.firstDayOfWeek = firstDayOfWeek
     return (start..end).map { firstDate + Days(it - 1) }

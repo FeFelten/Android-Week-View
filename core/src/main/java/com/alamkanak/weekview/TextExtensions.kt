@@ -21,11 +21,11 @@ internal fun SpannableStringBuilder.setSpan(
 private val emojiCompat: EmojiCompat?
     get() = try { EmojiCompat.get() } catch (e: IllegalStateException) { null }
 
-fun CharSequence.emojify(): CharSequence = emojiCompat?.process(this) ?: this
+internal fun CharSequence.emojify(): CharSequence = emojiCompat?.process(this) ?: this
 
 internal fun CharSequence.toTextLayout(
     textPaint: TextPaint,
-    width: Int,
+    width: Int = Int.MAX_VALUE,
     alignment: Layout.Alignment = Layout.Alignment.ALIGN_NORMAL,
     spacingMultiplier: Float = 1f,
     spacingExtra: Float = 0f,
@@ -61,7 +61,7 @@ internal fun CharSequence.ellipsized(
     truncateAt: TextUtils.TruncateAt = TextUtils.TruncateAt.END
 ): CharSequence = TextUtils.ellipsize(this, textPaint, availableArea.toFloat(), truncateAt)
 
-internal fun WeekViewConfigWrapper.getTextPaint(event: ResolvedWeekViewEvent<*>): TextPaint {
+internal fun ViewState.getTextPaint(event: ResolvedWeekViewEvent<*>): TextPaint {
     val textPaint = if (event.isAllDay) allDayEventTextPaint else eventTextPaint
     if (event.style.textColor != null) {
         textPaint.color = event.style.textColor

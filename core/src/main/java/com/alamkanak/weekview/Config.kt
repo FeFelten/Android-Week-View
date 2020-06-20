@@ -5,132 +5,88 @@ import android.content.res.TypedArray
 import android.graphics.Color
 import android.graphics.Typeface
 import android.util.AttributeSet
+import android.util.TypedValue
 
-internal class WeekViewConfig(
-    context: Context,
-    attrs: AttributeSet?
+internal class Config(
+    var firstDayOfWeek: Int? = null,
+    var numberOfVisibleDays: Int = 0,
+    var restoreNumberOfVisibleDays: Boolean = true,
+    var showFirstDayOfWeekFirst: Boolean = false,
+    var showCurrentTimeFirst: Boolean = false,
+    var showHeaderRowBottomLine: Boolean = false,
+    var headerRowBottomLineColor: Int = 0,
+    var headerRowBottomLineWidth: Int = 0,
+    var showHeaderRowBottomShadow: Boolean = false,
+    var headerRowBottomShadowColor: Int = 0,
+    var headerRowBottomShadowRadius: Int = 0,
+    var timeColumnTextColor: Int = 0,
+    var timeColumnBackgroundColor: Int = 0,
+    var timeColumnPadding: Int = 0,
+    var timeColumnTextSize: Int = 0,
+    var showMidnightHour: Boolean = false,
+    var showTimeColumnHourSeparator: Boolean = false,
+    var timeColumnHoursInterval: Int = 0,
+    var showTimeColumnSeparator: Boolean = false,
+    var timeColumnSeparatorColor: Int = 0,
+    var timeColumnSeparatorStrokeWidth: Int = 0,
+    var headerRowTextColor: Int = 0,
+    var headerRowBackgroundColor: Int = 0,
+    var headerRowTextSize: Int = 0,
+    var headerRowPadding: Int = 0,
+    var todayHeaderTextColor: Int = 0,
+    var showWeekNumber: Boolean = false,
+    var weekNumberTextColor: Int = 0,
+    var weekNumberTextSize: Int = 0,
+    var weekNumberBackgroundColor: Int = 0,
+    var weekNumberBackgroundCornerRadius: Int = 0,
+    var eventCornerRadius: Int = 0,
+    var eventTextSize: Int = 0,
+    var adaptiveEventTextSize: Boolean = false,
+    var eventTextColor: Int = 0,
+    var eventPaddingHorizontal: Int = 0,
+    var eventPaddingVertical: Int = 0,
+    var defaultEventColor: Int = 0,
+    var allDayEventTextSize: Int = 0,
+    var columnGap: Int = 0,
+    var overlappingEventGap: Int = 0,
+    var eventMarginVertical: Int = 0,
+    var eventMarginHorizontal: Int = 0,
+    var dayBackgroundColor: Int = 0,
+    var todayBackgroundColor: Int = 0,
+    var showDistinctWeekendColor: Boolean = false,
+    var showDistinctPastFutureColor: Boolean = false,
+    var pastBackgroundColor: Int = 0,
+    var futureBackgroundColor: Int = 0,
+    var pastWeekendBackgroundColor: Int = 0,
+    var futureWeekendBackgroundColor: Int = 0,
+    var hourHeight: Float = 0f,
+    var minHourHeight: Int = 0,
+    var maxHourHeight: Int = 0,
+    var effectiveMinHourHeight: Int = 0,
+    var showCompleteDay: Boolean = false,
+    var showNowLine: Boolean = false,
+    var nowLineColor: Int = 0,
+    var nowLineStrokeWidth: Int = 0,
+    var showNowLineDot: Boolean = false,
+    var nowLineDotColor: Int = 0,
+    var nowLineDotRadius: Int = 0,
+    var showHourSeparator: Boolean = false,
+    var hourSeparatorColor: Int = 0,
+    var hourSeparatorStrokeWidth: Int = 0,
+    var showDaySeparator: Boolean = false,
+    var daySeparatorColor: Int = 0,
+    var daySeparatorStrokeWidth: Int = 0,
+    var horizontalScrollingEnabled: Boolean = false,
+    @Deprecated("No longer used") var xScrollingSpeed: Float = 0f,
+    @Deprecated("No longer used") var verticalFlingEnabled: Boolean = false,
+    @Deprecated("No longer used") var horizontalFlingEnabled: Boolean = false,
+    @Deprecated("No longer used") var scrollDuration: Int = 0,
+    var minHour: Int = 0,
+    var maxHour: Int = 0,
+    var typeface: Typeface = Typeface.DEFAULT
 ) {
 
-    // Calendar configuration
-    var firstDayOfWeek: Int? = null
-    var numberOfVisibleDays: Int = 0
-    var restoreNumberOfVisibleDays: Boolean = true
-    var showFirstDayOfWeekFirst: Boolean = false
-    var showCurrentTimeFirst: Boolean = false
-
-    // Header bottom line
-    var showHeaderRowBottomLine: Boolean = false
-    var headerRowBottomLineColor: Int = 0
-    var headerRowBottomLineWidth: Int = 0
-
-    // Header bottom shadow
-    var showHeaderRowBottomShadow: Boolean = false
-    var headerRowBottomShadowColor: Int = 0
-    var headerRowBottomShadowRadius: Int = 0
-
-    // Time column
-    var timeColumnTextColor: Int = 0
-    var timeColumnBackgroundColor: Int = 0
-    var timeColumnPadding: Int = 0
-    var timeColumnTextSize: Int = 0
-    var showMidnightHour: Boolean = false
-    var showTimeColumnHourSeparator: Boolean = false
-    var timeColumnHoursInterval: Int = 0
-
-    // Time column separator
-    var showTimeColumnSeparator: Boolean = false
-    var timeColumnSeparatorColor: Int = 0
-    var timeColumnSeparatorStrokeWidth: Int = 0
-
-    // Header row
-    var headerRowTextColor: Int = 0
-    var headerRowBackgroundColor: Int = 0
-    var headerRowTextSize: Int = 0
-    var headerRowPadding: Int = 0
-    var todayHeaderTextColor: Int = 0
-    var singleLineHeader: Boolean = false
-
-    // Week number
-    var showWeekNumber: Boolean = false
-    var weekNumberTextColor: Int = 0
-    var weekNumberTextSize: Int = 0
-    var weekNumberBackgroundColor: Int = 0
-    var weekNumberBackgroundCornerRadius: Int = 0
-
-    // Event chips
-    var eventCornerRadius: Int = 0
-    var eventTextSize: Int = 0
-    var adaptiveEventTextSize: Boolean = false
-    var eventTextColor: Int = 0
-
-    var eventPaddingHorizontal: Int = 0
-    var eventPaddingVertical: Int = 0
-
-    var defaultEventColor: Int = 0
-    var allDayEventTextSize: Int = 0
-
-    // Event margins
-    var columnGap: Int = 0
-    var overlappingEventGap: Int = 0
-    var eventMarginVertical: Int = 0
-    var eventMarginHorizontal: Int = 0
-
-    // Colors
-    var dayBackgroundColor: Int = 0
-    var todayBackgroundColor: Int = 0
-    var showDistinctWeekendColor: Boolean = false
-    var showDistinctPastFutureColor: Boolean = false
-    var pastBackgroundColor: Int = 0
-    var futureBackgroundColor: Int = 0
-    var pastWeekendBackgroundColor: Int = 0
-    var futureWeekendBackgroundColor: Int = 0
-
-    // Hour height
-    var hourHeight: Float = 0f
-    var minHourHeight: Int = 0
-    var maxHourHeight: Int = 0
-    var effectiveMinHourHeight: Int = 0
-    var showCompleteDay: Boolean = false
-
-    // Now line
-    var showNowLine: Boolean = false
-    var nowLineColor: Int = 0
-    var nowLineStrokeWidth: Int = 0
-
-    // Now line dot
-    var showNowLineDot: Boolean = false
-    var nowLineDotColor: Int = 0
-    var nowLineDotRadius: Int = 0
-
-    // Hour separators
-    var showHourSeparator: Boolean = false
-    var hourSeparatorColor: Int = 0
-    var hourSeparatorStrokeWidth: Int = 0
-
-    // Day separators
-    var showDaySeparator: Boolean = false
-    var daySeparatorColor: Int = 0
-    var daySeparatorStrokeWidth: Int = 0
-
-    // Scrolling
-    @Deprecated("No longer used")
-    var xScrollingSpeed: Float = 0f
-    @Deprecated("No longer used")
-    var verticalFlingEnabled: Boolean = false
-    @Deprecated("No longer used")
-    var horizontalFlingEnabled: Boolean = false
-    var horizontalScrollingEnabled: Boolean = false
-    @Deprecated("No longer used")
-    var scrollDuration: Int = 0
-
-    // Time range
-    var minHour: Int = 0
-    var maxHour: Int = 0
-
-    // Font
-    var typeface: Typeface = Typeface.DEFAULT
-
-    init {
+    constructor(context: Context, attrs: AttributeSet?) : this() {
         val a = context.theme.obtainStyledAttributes(attrs, R.styleable.WeekView, 0, 0)
         a.use {
             // Calendar configuration
@@ -288,5 +244,23 @@ private fun TypedArray.use(block: TypedArray.() -> Unit) {
         block()
     } finally {
         recycle()
+    }
+}
+
+private object Defaults {
+    const val BACKGROUND_COLOR = Color.WHITE
+    val PAST_BACKGROUND_COLOR = Color.rgb(227, 227, 227)
+    val FUTURE_BACKGROUND_COLOR = Color.rgb(245, 245, 245)
+
+    val EVENT_COLOR = Color.rgb(159, 198, 231)
+
+    val GRID_COLOR = Color.rgb(102, 102, 102)
+    const val NOW_COLOR = Color.BLACK
+    val SEPARATOR_COLOR = Color.rgb(230, 230, 230)
+    val HIGHLIGHT_COLOR = Color.rgb(39, 137, 228)
+
+    fun textSize(context: Context): Int {
+        val displayMetrics = context.resources.displayMetrics
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12f, displayMetrics).toInt()
     }
 }

@@ -54,7 +54,8 @@ internal class EventChipsCache<T> {
     operator fun plusAssign(newChips: List<EventChip<T>>) = put(newChips)
 
     fun clearSingleEventsCache() {
-        allEventChips.filter { it.originalEvent.isNotAllDay }.forEach(EventChip<T>::clearCache)
+        // TODO
+        // allEventChips.filter { it.originalEvent.isNotAllDay }.forEach(EventChip<T>::clearCache)
     }
 
     fun clear() {

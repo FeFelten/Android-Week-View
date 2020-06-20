@@ -65,7 +65,7 @@ class EventsDatabase(context: Context) {
         )
 
         events += newEvent(
-            id = idOffset + 3,
+            id = idOffset + 4,
             year = year,
             month = month,
             dayOfMonth = 28,
@@ -76,7 +76,7 @@ class EventsDatabase(context: Context) {
         )
 
         events += newEvent(
-            id = idOffset + 4,
+            id = idOffset + 5,
             year = year,
             month = month,
             dayOfMonth = 28,
@@ -87,7 +87,7 @@ class EventsDatabase(context: Context) {
         )
 
         events += newEvent(
-            id = idOffset + 5,
+            id = idOffset + 6,
             year = year,
             month = month,
             dayOfMonth = 28,
@@ -98,7 +98,7 @@ class EventsDatabase(context: Context) {
         )
 
         events += newEvent(
-            id = idOffset + 6,
+            id = idOffset + 7,
             year = year,
             month = month,
             dayOfMonth = 17,
@@ -109,7 +109,7 @@ class EventsDatabase(context: Context) {
         )
 
         events += newEvent(
-            id = idOffset + 7,
+            id = idOffset + 8,
             year = year,
             month = month,
             dayOfMonth = 15,
@@ -121,7 +121,7 @@ class EventsDatabase(context: Context) {
         )
 
         events += newEvent(
-            id = idOffset + 8,
+            id = idOffset + 9,
             year = year,
             month = month,
             dayOfMonth = 1,
@@ -132,7 +132,7 @@ class EventsDatabase(context: Context) {
         )
 
         events += newEvent(
-            id = idOffset + 9,
+            id = idOffset + 10,
             year = year,
             month = month,
             dayOfMonth = startDate.getActualMaximum(Calendar.DAY_OF_MONTH),
@@ -140,19 +140,6 @@ class EventsDatabase(context: Context) {
             minute = 0,
             duration = 3 * 60,
             color = color2
-        )
-
-        // All-day event
-        events += newEvent(
-            id = idOffset + 10,
-            year = year,
-            month = month,
-            dayOfMonth = 28,
-            hour = 0,
-            minute = 0,
-            duration = 24 * 60,
-            isAllDay = true,
-            color = color4
         )
 
         // All-day event
@@ -165,12 +152,25 @@ class EventsDatabase(context: Context) {
             minute = 0,
             duration = 24 * 60,
             isAllDay = true,
+            color = color4
+        )
+
+        // All-day event
+        events += newEvent(
+            id = idOffset + 12,
+            year = year,
+            month = month,
+            dayOfMonth = 28,
+            hour = 0,
+            minute = 0,
+            duration = 24 * 60,
+            isAllDay = true,
             color = color2
         )
 
         // All-day event until 00:00 next day
         events += newEvent(
-            id = idOffset + 12,
+            id = idOffset + 13,
             year = year,
             month = month,
             dayOfMonth = 14,

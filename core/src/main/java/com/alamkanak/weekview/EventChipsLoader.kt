@@ -1,12 +1,11 @@
 package com.alamkanak.weekview
 
+import com.alamkanak.weekview.EventChipsLoader.CollisionGroup
 import java.util.Calendar
 
-internal class EventChipsLoader<T>(
-    private val config: WeekViewConfigWrapper
-) {
+internal class EventChipsLoader<T>(private val viewState: ViewState) {
 
-    private val eventSplitter = WeekViewEventSplitter<T>(config)
+    private val eventSplitter = WeekViewEventSplitter<T>(viewState)
 
     fun createEventChips(events: List<ResolvedWeekViewEvent<T>>): List<EventChip<T>> {
         val eventChips = convertEventsToEventChips(events)
@@ -111,7 +110,7 @@ internal class EventChipsLoader<T>(
             return
         }
 
-        val hoursFromStart = event.startTime.hour - config.minHour
+        val hoursFromStart = event.startTime.hour - viewState.minHour
         eventChip.minutesFromStartHour = hoursFromStart * 60 + event.startTime.minute
     }
 
@@ -155,9 +154,6 @@ internal class EventChipsLoader<T>(
         /**
          * Returns whether an [EventChip] collides with any [EventChip] already in the
          * [CollisionGroup].
-         *
-         * @param eventChip An [EventChip]
-         * @return Whether a collision exists
          */
         fun collidesWith(eventChip: EventChip<T>): Boolean {
             return eventChips.any { it.event.collidesWith(eventChip.event) }
@@ -215,5 +211,20 @@ internal class EventChipsLoader<T>(
 
     private fun List<EventChip<T>>.groupedByDate(): Map<Calendar, List<EventChip<T>>> {
         return groupBy { it.event.startTime.atStartOfDay }
+    }
+}
+
+/**
+ * This class encapsulates [EventChip]s that collide with each other, meaning that
+ * they overlap from a time perspective.
+ *
+ */
+private inline class CollisionGroup<T>(val eventChips: MutableList<EventChip<T>>) {
+    /**
+     * Returns whether an [EventChip] collides with any [EventChip] already in the
+     * [CollisionGroup].
+     */
+    fun collidesWith(eventChip: EventChip<T>): Boolean {
+        return eventChips.any { it.event.collidesWith(eventChip.event) }
     }
 }

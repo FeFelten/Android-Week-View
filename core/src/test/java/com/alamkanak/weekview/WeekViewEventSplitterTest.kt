@@ -10,7 +10,7 @@ import org.mockito.MockitoAnnotations
 
 class WeekViewEventSplitterTest {
 
-    private val config = mock(WeekViewConfigWrapper::class.java)
+    private val config = mock(ViewState::class.java)
     private val underTest = WeekViewEventSplitter<Unit>(config)
 
     init {
