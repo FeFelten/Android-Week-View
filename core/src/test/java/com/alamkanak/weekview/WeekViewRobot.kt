@@ -2,9 +2,9 @@ package com.alamkanak.weekview
 
 import android.content.Context
 import com.google.common.truth.Truth.assertThat
+import java.util.Calendar
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoMoreInteractions
-import java.util.Calendar
 
 internal fun weekViewRobot(
     context: Context,
