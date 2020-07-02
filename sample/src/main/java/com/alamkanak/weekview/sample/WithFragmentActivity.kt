@@ -10,7 +10,7 @@ import com.alamkanak.weekview.sample.data.model.Event
 import com.alamkanak.weekview.sample.util.lazyView
 import com.alamkanak.weekview.sample.util.setupWithWeekView
 import com.google.android.material.appbar.MaterialToolbar
-import java.util.Calendar
+import java.time.YearMonth
 
 class WithFragmentActivity : AppCompatActivity(R.layout.activity_with_fragment) {
 
@@ -36,8 +36,8 @@ class WeekFragment : Fragment(R.layout.fragment_week) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         toolbar.setupWithWeekView(weekView)
 
-        val start = getStartDate()
-        val end = getEndDate()
+        val start = YearMonth.now().atDay(1)
+        val end = YearMonth.now().atEndOfMonth()
 
         val events = database.getEventsInRange(start, end)
         weekView.submit(events)
@@ -47,16 +47,16 @@ class WeekFragment : Fragment(R.layout.fragment_week) {
         weekView.maxDate = end
     }
 
-    private fun getStartDate(): Calendar = Calendar.getInstance().apply {
-        set(Calendar.DAY_OF_MONTH, 1)
-        set(Calendar.HOUR_OF_DAY, 0)
-    }
-
-    private fun getEndDate(): Calendar = Calendar.getInstance().apply {
-        val daysInMonth = getActualMaximum(Calendar.DAY_OF_MONTH)
-        set(Calendar.DAY_OF_MONTH, daysInMonth)
-        set(Calendar.HOUR_OF_DAY, 23)
-    }
+//    private fun getStartDate(): Calendar = Calendar.getInstance().apply {
+//        set(Calendar.DAY_OF_MONTH, 1)
+//        set(Calendar.HOUR_OF_DAY, 0)
+//    }
+//
+//    private fun getEndDate(): Calendar = Calendar.getInstance().apply {
+//        val daysInMonth = getActualMaximum(Calendar.DAY_OF_MONTH)
+//        set(Calendar.DAY_OF_MONTH, daysInMonth)
+//        set(Calendar.HOUR_OF_DAY, 23)
+//    }
 
     companion object {
         fun newInstance() = WeekFragment()

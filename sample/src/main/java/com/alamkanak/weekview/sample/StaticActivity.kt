@@ -15,9 +15,10 @@ import com.alamkanak.weekview.sample.data.model.Event
 import com.alamkanak.weekview.sample.util.lazyView
 import com.alamkanak.weekview.sample.util.setupWithWeekView
 import com.alamkanak.weekview.sample.util.showToast
-import java.text.DateFormat
-import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import kotlinx.android.synthetic.main.activity_static.dateRangeTextView
 import kotlinx.android.synthetic.main.activity_static.nextWeekButton
 import kotlinx.android.synthetic.main.activity_static.previousWeekButton
@@ -29,7 +30,7 @@ class StaticActivity : AppCompatActivity(), OnEventClickListener<Event>,
     private val weekView: WeekView<Event> by lazyView(R.id.weekView)
 
     private val database: EventsDatabase by lazy { EventsDatabase(this) }
-    private val dateFormatter = SimpleDateFormat.getDateInstance(DateFormat.MEDIUM)
+    private val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,28 +44,28 @@ class StaticActivity : AppCompatActivity(), OnEventClickListener<Event>,
         weekView.onEmptyViewLongClickListener = this
 
         previousWeekButton.setOnClickListener {
-            val cal = weekView.firstVisibleDate
-            cal.add(Calendar.DATE, -7)
+            val cal = weekView.firstVisibleDate.minusDays(7L)
+            // cal.add(Calendar.DATE, -7)
             weekView.goToDate(cal)
         }
 
         nextWeekButton.setOnClickListener {
-            val cal = weekView.firstVisibleDate
-            cal.add(Calendar.DATE, 7)
+            val cal = weekView.firstVisibleDate.plusDays(7L)
+            // cal.add(Calendar.DATE, 7)
             weekView.goToDate(cal)
         }
 
         weekView.onRangeChangeListener = object : OnRangeChangeListener {
             override fun onRangeChanged(
-                firstVisibleDate: Calendar,
-                lastVisibleDate: Calendar
+                firstVisibleDate: LocalDate,
+                lastVisibleDate: LocalDate
             ) = updateDateText(firstVisibleDate, lastVisibleDate)
         }
     }
 
     override fun onMonthChange(
-        startDate: Calendar,
-        endDate: Calendar
+        startDate: LocalDate,
+        endDate: LocalDate
     ) = database.getEventsInRange(startDate, endDate)
 
     override fun onEventClick(data: Event, eventRect: RectF) {
@@ -76,14 +77,14 @@ class StaticActivity : AppCompatActivity(), OnEventClickListener<Event>,
         Toast.makeText(this, "Long pressed event: " + data.title, Toast.LENGTH_SHORT).show()
     }
 
-    override fun onEmptyViewLongClick(time: Calendar) {
-        val sdf = SimpleDateFormat.getDateTimeInstance()
-        showToast("Empty view long-clicked at ${sdf.format(time.time)}")
+    override fun onEmptyViewLongClick(time: LocalDateTime) {
+        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
+        showToast("Empty view long-clicked at ${formatter.format(time)}")
     }
 
-    internal fun updateDateText(firstVisibleDate: Calendar, lastVisibleDate: Calendar) {
-        val formattedFirstDay = dateFormatter.format(firstVisibleDate.time)
-        val formattedLastDay = dateFormatter.format(lastVisibleDate.time)
+    internal fun updateDateText(firstVisibleDate: LocalDate, lastVisibleDate: LocalDate) {
+        val formattedFirstDay = dateFormatter.format(firstVisibleDate)
+        val formattedLastDay = dateFormatter.format(lastVisibleDate)
         dateRangeTextView.text = getString(R.string.date_infos, formattedFirstDay, formattedLastDay)
     }
 }

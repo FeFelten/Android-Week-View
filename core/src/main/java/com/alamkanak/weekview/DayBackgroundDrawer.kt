@@ -2,7 +2,7 @@ package com.alamkanak.weekview
 
 import android.graphics.Canvas
 import android.graphics.Paint
-import java.util.Calendar
+import java.time.LocalDate
 import kotlin.math.max
 
 internal class DayBackgroundDrawer(
@@ -18,12 +18,12 @@ internal class DayBackgroundDrawer(
     /**
      * Draws a day's background color in the corresponding bounds.
      *
-     * @param day The [Calendar] indicating the date
+     * @param date The [LocalDate] indicating the date
      * @param startPixel The x-coordinate on which to start drawing the background
      * @param canvas The [Canvas] on which to draw the background
      */
     private fun drawDayBackground(
-        day: Calendar,
+        date: LocalDate,
         startPixel: Float,
         canvas: Canvas
     ) {
@@ -37,7 +37,7 @@ internal class DayBackgroundDrawer(
         val height = viewState.viewHeight.toFloat()
 
         if (viewState.showDistinctPastFutureColor) {
-            val useWeekendColor = day.isWeekend && viewState.showDistinctWeekendColor
+            val useWeekendColor = date.isWeekend && viewState.showDistinctWeekendColor
             val pastPaint = viewState.getPastBackgroundPaint(useWeekendColor)
             val futurePaint = viewState.getFutureBackgroundPaint(useWeekendColor)
 
@@ -45,12 +45,12 @@ internal class DayBackgroundDrawer(
             val endX = startPixel + viewState.widthPerDay
 
             when {
-                day.isToday -> drawPastAndFutureRect(actualStartPixel, startY, endX, pastPaint, futurePaint, height, canvas)
-                day.isBeforeToday -> canvas.drawRect(actualStartPixel, startY, endX, height, pastPaint)
+                date.isToday -> drawPastAndFutureRect(actualStartPixel, startY, endX, pastPaint, futurePaint, height, canvas)
+                date.isBeforeToday -> canvas.drawRect(actualStartPixel, startY, endX, height, pastPaint)
                 else -> canvas.drawRect(actualStartPixel, startY, endX, height, futurePaint)
             }
         } else {
-            val todayPaint = viewState.getDayBackgroundPaint(day.isToday)
+            val todayPaint = viewState.getDayBackgroundPaint(date.isToday)
             val right = startPixel + viewState.widthPerDay
             canvas.drawRect(actualStartPixel, viewState.headerHeight, right, height, todayPaint)
         }

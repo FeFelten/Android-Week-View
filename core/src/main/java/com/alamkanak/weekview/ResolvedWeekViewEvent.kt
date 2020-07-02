@@ -1,8 +1,8 @@
 package com.alamkanak.weekview
 
 import android.content.Context
-import java.util.Calendar
-import kotlin.math.roundToInt
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit.MINUTES
 
 internal fun <T> WeekViewDisplayable<T>.resolve(
     context: Context
@@ -36,8 +36,8 @@ internal fun WeekViewEvent.Style.resolve(
 internal data class ResolvedWeekViewEvent<T>(
     val id: Long,
     val title: CharSequence,
-    val startTime: Calendar,
-    val endTime: Calendar,
+    val startTime: LocalDateTime,
+    val endTime: LocalDateTime,
     val location: CharSequence?,
     val isAllDay: Boolean,
     val style: Style,
@@ -55,9 +55,9 @@ internal data class ResolvedWeekViewEvent<T>(
 
     internal val isNotAllDay: Boolean = isAllDay.not()
 
-    internal val durationInMinutes: Int = ((endTime.timeInMillis - startTime.timeInMillis).toFloat() / 60_000).roundToInt()
+    internal val durationInMinutes: Int = startTime.until(endTime, MINUTES).toInt() // ((endTime.timeInMillis - startTime.timeInMillis).toFloat() / 60_000).roundToInt()
 
-    internal val isMultiDay: Boolean = startTime.isSameDate(endTime).not()
+    internal val isMultiDay: Boolean = startTime.toLocalDate().isNotEqual(endTime.toLocalDate())
 
     internal fun isWithin(
         minHour: Int,
@@ -76,10 +76,12 @@ internal data class ResolvedWeekViewEvent<T>(
 
         // Resolve collisions by shortening the preceding event by 1 ms
         if (endTime.isEqual(other.startTime)) {
-            endTime -= Millis(1)
+            // TODO !!!
+            // endTime -= Millis(1)
             return false
         } else if (startTime.isEqual(other.endTime)) {
-            other.endTime -= Millis(1)
+            // TODO !!!
+            // other.endTime -= Millis(1)
         }
 
         return !startTime.isAfter(other.endTime) && !endTime.isBefore(other.startTime)
@@ -87,9 +89,9 @@ internal data class ResolvedWeekViewEvent<T>(
 
     internal fun startsOnEarlierDay(
         originalEvent: ResolvedWeekViewEvent<T>
-    ): Boolean = startTime.isNotEqual(originalEvent.startTime)
+    ): Boolean = startTime.isEqual(originalEvent.startTime).not()
 
     internal fun endsOnLaterDay(
         originalEvent: ResolvedWeekViewEvent<T>
-    ): Boolean = endTime.isNotEqual(originalEvent.endTime)
+    ): Boolean = endTime.isEqual(originalEvent.endTime).not()
 }

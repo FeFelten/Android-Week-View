@@ -4,7 +4,7 @@ import android.graphics.RectF
 import android.text.SpannableStringBuilder
 import android.text.StaticLayout
 import androidx.collection.ArrayMap
-import java.util.Calendar
+import java.time.LocalDate
 import kotlin.math.roundToInt
 
 internal interface EventsUpdater {
@@ -191,7 +191,7 @@ internal class SingleEventsUpdater<T>(
     }
 
     private fun calculateRectsForEventsOnDate(
-        date: Calendar,
+        date: LocalDate,
         startPixel: Float
     ) {
         chipsCache.normalEventChipsByDate(date)

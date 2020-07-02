@@ -10,13 +10,16 @@ android {
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
+        // Required for core library desugaring
+        multiDexEnabled true
+    }
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
     lintOptions {
         abortOnError false
-    }
-    compileOptions {
-        sourceCompatibility = 1.8
-        targetCompatibility = 1.8
     }
 }
 
@@ -24,6 +27,8 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':core')
     implementation project(':threetenabp')
+
+    coreLibraryDesugaring libraries.coreLibraryDesugaring
 
     implementation libraries.kotlin
     implementation libraries.appCompat

@@ -9,7 +9,8 @@ import com.alamkanak.weekview.sample.util.lazyView
 import com.alamkanak.weekview.sample.util.setupWithWeekView
 import com.alamkanak.weekview.sample.util.showToast
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlinx.android.synthetic.main.view_toolbar.toolbar
 
 class CustomFontActivity : AppCompatActivity() {
@@ -30,8 +31,8 @@ class CustomFontActivity : AppCompatActivity() {
     }
 
     private fun onMonthChange(
-        startDate: Calendar,
-        endDate: Calendar
+        startDate: LocalDate,
+        endDate: LocalDate
     ) = database.getEventsInRange(startDate, endDate)
 
     private fun onEventClick(event: Event) {
@@ -42,8 +43,8 @@ class CustomFontActivity : AppCompatActivity() {
         showToast("Long-clicked ${event.title}")
     }
 
-    private fun onEmptyViewLongClick(time: Calendar) {
+    private fun onEmptyViewLongClick(time: LocalDateTime) {
         val sdf = SimpleDateFormat.getDateTimeInstance()
-        showToast("Empty view long-clicked at ${sdf.format(time.time)}")
+        showToast("Empty view long-clicked at ${sdf.format(time)}")
     }
 }

@@ -1,6 +1,6 @@
 package com.alamkanak.weekview
 
-import java.util.Calendar
+import java.time.LocalDate
 import java.util.concurrent.ConcurrentHashMap
 
 internal class EventChipsCache<T> {
@@ -8,41 +8,42 @@ internal class EventChipsCache<T> {
     val allEventChips: List<EventChip<T>>
         get() = normalEventChipsByDate.values.flatten() + allDayEventChipsByDate.values.flatten()
 
-    private val normalEventChipsByDate = ConcurrentHashMap<Long, MutableList<EventChip<T>>>()
-    private val allDayEventChipsByDate = ConcurrentHashMap<Long, MutableList<EventChip<T>>>()
+    private val normalEventChipsByDate = ConcurrentHashMap<Int, MutableList<EventChip<T>>>()
+    private val allDayEventChipsByDate = ConcurrentHashMap<Int, MutableList<EventChip<T>>>()
 
     fun allEventChipsInDateRange(
-        dateRange: List<Calendar>
+        dateRange: List<LocalDate>
     ): List<EventChip<T>> {
         val results = mutableListOf<EventChip<T>>()
         for (date in dateRange) {
-            results += allDayEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
-            results += normalEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
+            val key = date.epochDay
+            results += allDayEventChipsByDate[key].orEmpty()
+            results += normalEventChipsByDate[key].orEmpty()
         }
         return results
     }
 
     fun normalEventChipsByDate(
-        date: Calendar
-    ): List<EventChip<T>> = normalEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
+        date: LocalDate
+    ): List<EventChip<T>> = normalEventChipsByDate[date.epochDay].orEmpty()
 
     fun allDayEventChipsByDate(
-        date: Calendar
-    ): List<EventChip<T>> = allDayEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
+        date: LocalDate
+    ): List<EventChip<T>> = allDayEventChipsByDate[date.epochDay].orEmpty()
 
     fun allDayEventChipsInDateRange(
-        dateRange: List<Calendar>
+        dateRange: List<LocalDate>
     ): List<EventChip<T>> {
         val results = mutableListOf<EventChip<T>>()
         for (date in dateRange) {
-            results += allDayEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
+            results += allDayEventChipsByDate[date.epochDay].orEmpty()
         }
         return results
     }
 
     private fun put(newChips: List<EventChip<T>>) {
         for (eventChip in newChips) {
-            val key = eventChip.event.startTime.atStartOfDay.timeInMillis
+            val key = eventChip.event.startTime.toLocalDate().epochDay
             if (eventChip.event.isAllDay) {
                 allDayEventChipsByDate.addOrReplace(key, eventChip)
             } else {
@@ -63,8 +64,8 @@ internal class EventChipsCache<T> {
         normalEventChipsByDate.clear()
     }
 
-    private fun <T> ConcurrentHashMap<Long, MutableList<EventChip<T>>>.addOrReplace(
-        key: Long,
+    private fun <T> ConcurrentHashMap<Int, MutableList<EventChip<T>>>.addOrReplace(
+        key: Int,
         eventChip: EventChip<T>
     ) {
         val results = getOrElse(key) { mutableListOf() }

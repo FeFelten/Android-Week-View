@@ -1,7 +1,8 @@
 package com.alamkanak.weekview
 
 import androidx.annotation.VisibleForTesting
-import java.util.Calendar
+import java.time.LocalDate
+import java.time.YearMonth
 
 /**
  * Wraps all available [EventsCache]s to allow for dynamic switching between them.
@@ -44,22 +45,22 @@ internal abstract class EventsCache<T> {
     abstract fun clear()
 
     operator fun get(
-        dateRange: List<Calendar>
+        dateRange: List<LocalDate>
     ): List<ResolvedWeekViewEvent<T>> {
         val startDate = checkNotNull(dateRange.min())
         val endDate = checkNotNull(dateRange.max())
-        return allEvents.filter { it.endTime >= startDate || it.startTime <= endDate }
+        return allEvents.filter { it.endTime.toLocalDate() >= startDate || it.startTime.toLocalDate() <= endDate }
     }
 
     operator fun get(
         fetchRange: FetchRange
     ): List<ResolvedWeekViewEvent<T>> {
-        val startTime = fetchRange.previous.startDate
-        val endTime = fetchRange.next.endDate
-        return allEvents.filter { it.endTime >= startTime && it.startTime <= endTime }
+        val startTime = fetchRange.previous.atDay(1)
+        val endTime = fetchRange.next.atEndOfMonth()
+        return allEvents.filter { it.endTime.toLocalDate() >= startTime && it.startTime.toLocalDate() <= endTime }
     }
 
-    open operator fun get(period: Period): List<ResolvedWeekViewEvent<T>>? = null
+    open operator fun get(period: YearMonth): List<ResolvedWeekViewEvent<T>>? = null
 }
 
 /**
@@ -100,11 +101,11 @@ internal class PagedEventsCache<T> : EventsCache<T>() {
     @VisibleForTesting
     internal var fetchedRange: FetchRange? = null
 
-    operator fun contains(period: Period) = fetchedRange?.periods?.contains(period) ?: false
+    operator fun contains(period: YearMonth) = fetchedRange?.periods?.contains(period) ?: false
 
-    operator fun contains(fetchRange: FetchRange) = fetchedRange?.isEqual(fetchRange) ?: false
+    operator fun contains(fetchRange: FetchRange) = fetchedRange == fetchRange // TODO Correct?
 
-    override fun get(period: Period): List<ResolvedWeekViewEvent<T>>? {
+    override fun get(period: YearMonth): List<ResolvedWeekViewEvent<T>>? {
         val range = checkNotNull(fetchedRange)
         return when (period) {
             range.previous -> previousPeriodEvents
@@ -156,13 +157,13 @@ internal class PagedEventsCache<T> : EventsCache<T>() {
         fetchedRange = fetchRange
     }
 
-    fun update(eventsByPeriod: Map<Period, List<ResolvedWeekViewEvent<T>>>) {
+    fun update(eventsByPeriod: Map<YearMonth, List<ResolvedWeekViewEvent<T>>>) {
         for ((period, events) in eventsByPeriod) {
             update(period, events)
         }
     }
 
-    private fun update(period: Period, events: List<ResolvedWeekViewEvent<T>>) {
+    private fun update(period: YearMonth, events: List<ResolvedWeekViewEvent<T>>) {
         val range = checkNotNull(fetchedRange)
         when (period) {
             range.previous -> previousPeriodEvents = events
@@ -172,7 +173,7 @@ internal class PagedEventsCache<T> : EventsCache<T>() {
     }
 
     operator fun set(
-        period: Period,
+        period: YearMonth,
         events: List<ResolvedWeekViewEvent<T>>
     ) {
         update(period, events)

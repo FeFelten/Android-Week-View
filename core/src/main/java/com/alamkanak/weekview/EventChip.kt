@@ -68,6 +68,7 @@ internal data class EventChip<T>(
         availableHeightCache = height
     }
 
+    // TODO
     fun clearCache() {
         bounds.setEmpty()
         availableWidthCache = 0

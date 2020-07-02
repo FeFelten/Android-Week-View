@@ -5,7 +5,7 @@ import android.graphics.RectF
 import android.text.StaticLayout
 import android.util.SparseArray
 import androidx.collection.ArrayMap
-import java.util.Calendar
+import java.time.LocalDate
 
 internal interface Renderer {
     // fun updateBounds(bounds: RectF, canvas: Canvas)
@@ -187,8 +187,8 @@ internal class HeaderRenderer<T>(
         }
     }
 
-    private fun updateDateLabels(dateRange: List<Calendar>): Int {
-        val keys = dateRange.map { it.toEpochDays() }
+    private fun updateDateLabels(dateRange: List<LocalDate>): Int {
+        val keys = dateRange.map { it.epochDay }
         val textLayouts = dateRange.map { viewState.calculateStaticLayoutForDate(it) }
 
         dateLabelLayouts.clear()
@@ -197,7 +197,7 @@ internal class HeaderRenderer<T>(
         return textLayouts.map { it.height }.max() ?: 0
     }
 
-    private fun ViewState.calculateStaticLayoutForDate(date: Calendar): StaticLayout {
+    private fun ViewState.calculateStaticLayoutForDate(date: LocalDate): StaticLayout {
         val dayLabel = dateFormatter(date)
         return dayLabel.toTextLayout(
             textPaint = if (date.isToday) todayHeaderTextPaint else headerTextPaint,

@@ -14,9 +14,11 @@ import com.alamkanak.weekview.sample.data.model.Event
 import com.alamkanak.weekview.sample.util.lazyView
 import com.alamkanak.weekview.sample.util.setupWithWeekView
 import com.alamkanak.weekview.sample.util.showToast
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Calendar.DAY_OF_MONTH
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import kotlinx.android.synthetic.main.view_toolbar.toolbar
 
 class LimitedActivity : AppCompatActivity(), OnEventClickListener<Event>,
@@ -40,33 +42,27 @@ class LimitedActivity : AppCompatActivity(), OnEventClickListener<Event>,
     }
 
     private fun setupDateRange() {
-        val now = Calendar.getInstance()
-
-        val min = now.clone() as Calendar
-        min.set(DAY_OF_MONTH, 1)
-        weekView.minDate = min
-
-        val max = now.clone() as Calendar
-        max.set(DAY_OF_MONTH, max.getActualMaximum(DAY_OF_MONTH))
-        weekView.maxDate = max
+        weekView.minDate = YearMonth.now().atDay(1)
+        weekView.maxDate = YearMonth.now().atEndOfMonth()
     }
 
     override fun onMonthChange(
-        startDate: Calendar,
-        endDate: Calendar
+        startDate: LocalDate,
+        endDate: LocalDate
     ) = database.getEventsInRange(startDate, endDate)
 
-    override fun onEventClick(event: Event, eventRect: RectF) {
-        showToast("Clicked ${event.title}")
+    override fun onEventClick(data: Event, eventRect: RectF) {
+        showToast("Clicked ${data.title}")
     }
 
-    override fun onEventLongClick(event: Event, eventRect: RectF) {
-        showToast("Long-clicked ${event.title}")
-        Toast.makeText(this, "Long pressed event: " + event.title, Toast.LENGTH_SHORT).show()
+    override fun onEventLongClick(data: Event, eventRect: RectF) {
+        showToast("Long-clicked ${data.title}")
+        Toast.makeText(this, "Long pressed event: " + data.title, Toast.LENGTH_SHORT).show()
     }
 
-    override fun onEmptyViewLongClick(time: Calendar) {
-        val sdf = SimpleDateFormat.getDateTimeInstance()
-        showToast("Empty view long-clicked at ${sdf.format(time.time)}")
+    override fun onEmptyViewLongClick(time: LocalDateTime) {
+        // val sdf = SimpleDateFormat.getDateTimeInstance()
+        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
+        showToast("Empty view long-clicked at ${formatter.format(time)}")
     }
 }

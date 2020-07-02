@@ -3,7 +3,7 @@ package com.alamkanak.weekview
 import android.graphics.Canvas
 import android.text.StaticLayout
 import androidx.collection.ArrayMap
-import java.util.Calendar
+import java.time.LocalDate
 
 internal class SingleEventsDrawer<T>(
     private val viewState: ViewState,
@@ -19,7 +19,7 @@ internal class SingleEventsDrawer<T>(
     }
 
     private fun drawEventsForDate(
-        date: Calendar,
+        date: LocalDate,
         canvas: Canvas
     ) {
         val chips = chipsCache.normalEventChipsByDate(date)
@@ -40,6 +40,7 @@ internal class AllDayEventsDrawer<T>(
             eventChipDrawer.draw(eventChip, canvas, textLayout)
         }
     }
+    // TODO
 //    override fun clear() {
 //        cache.clear()
 //    }

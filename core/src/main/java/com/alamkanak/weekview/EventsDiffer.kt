@@ -3,7 +3,8 @@ package com.alamkanak.weekview
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import java.util.Calendar
+import java.time.LocalDate
+import java.time.YearMonth
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
@@ -42,7 +43,7 @@ internal class EventsDiffer<T>(
         backgroundExecutor.execute {
             val dateRange = viewState.dateRange
             // It's possible that weekView.submit() is called before the date range has been
-            // initialized. Therefor, waiting until the date range is actually set may be required.
+            // initialized. Therefore, waiting until the date range is actually set may be required.
             while (dateRange.isEmpty()) {
                 Thread.sleep(100L)
                 continue
@@ -57,11 +58,11 @@ internal class EventsDiffer<T>(
 
     private fun submitItems(
         items: List<WeekViewDisplayable<T>>,
-        dateRange: List<Calendar>
+        dateRange: List<LocalDate>
     ): Boolean {
         val events = items.map { it.resolve(context) }
-        val startDate = events.map { it.startTime.atStartOfDay }.min()
-        val endDate = events.map { it.endTime.atEndOfDay }.max()
+        val startDate = events.map { it.startTime }.min()
+        val endDate = events.map { it.endTime }.max()
 
         val eventsCache = eventsCacheWrapper.get()
 
@@ -80,10 +81,10 @@ internal class EventsDiffer<T>(
         }
 
         eventChipsCache += eventChipsLoader.createEventChips(events)
-        return dateRange.any { it.isBetween(startDate, endDate, inclusive = true) }
+        return dateRange.any { it >= startDate.toLocalDate() || it <= endDate.toLocalDate() } // TODO
     }
 
     private fun mapEventsToPeriod(
         events: List<ResolvedWeekViewEvent<T>>
-    ) = events.groupBy { Period.fromDate(it.startTime) }
+    ) = events.groupBy { YearMonth.from(it.startTime) } // Period.fromDate(it.startTime) }
 }

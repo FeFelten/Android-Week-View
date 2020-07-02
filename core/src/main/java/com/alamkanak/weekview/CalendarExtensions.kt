@@ -1,12 +1,36 @@
 package com.alamkanak.weekview
 
 import java.text.SimpleDateFormat
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.YearMonth
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.roundToInt
 
 private const val DAY_IN_MILLIS = 1000L * 60L * 60L * 24L
 
+internal fun LocalDate.isNotEqual(other: LocalDate) = isEqual(other).not()
+
+internal fun LocalDateTime.minusMillis(millis: Long) = minusNanos(millis * 1_000_000)
+
+internal fun LocalDate.datesBetween(other: LocalDate): List<LocalDate> {
+    if (this.isEqual(other)) return emptyList()
+    val datesBetween = ChronoUnit.DAYS.between(this.plusDays(1L), other)
+    val now = LocalDate.now()
+    return (0 until datesBetween).map { now.plusDays(it) }
+}
+
+// internal val LocalDate.startOfCurrentWeek: LocalDate
+//    get() {
+//        val firstDayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek
+//        return this.with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
+//    }
+
+@Deprecated("")
 internal interface Duration {
     val inMillis: Int
 }
@@ -146,6 +170,12 @@ internal val Calendar.isBeforeToday: Boolean
 internal val Calendar.isToday: Boolean
     get() = isSameDate(today())
 
+internal val LocalDate.isToday: Boolean
+    get() = isEqual(LocalDate.now())
+
+internal val LocalDate.isBeforeToday: Boolean
+    get() = isBefore(LocalDate.now())
+
 internal fun Calendar.toEpochDays(): Int = (atStartOfDay.timeInMillis / DAY_IN_MILLIS).toInt()
 
 internal val Calendar.lengthOfMonth: Int
@@ -189,9 +219,15 @@ internal val Calendar.daysFromToday: Int
         return (diff / DAY_IN_MILLIS).roundToInt()
     }
 
+internal fun Calendar.toLocalDate(): LocalDate {
+    return toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+}
+
 internal fun today() = now().atStartOfDay
 
 internal fun now() = Calendar.getInstance()
+
+internal fun YearMonth.atStartOfMonth(): LocalDate = atDay(1)
 
 internal fun Calendar.isSameDate(other: Calendar): Boolean = toEpochDays() == other.toEpochDays()
 
@@ -202,14 +238,17 @@ internal fun firstDayOfYear(): Calendar {
     }
 }
 
-internal fun ViewState.createDateRange(start: Int, end: Int): List<Calendar> {
-    val firstDate = today()
-    firstDate.firstDayOfWeek = firstDayOfWeek
-    return (start..end).map { firstDate + Days(it - 1) }
+internal val LocalDate.epochDay: Int
+    get() = toEpochDay().toInt()
+
+internal fun ViewState.createDateRange(start: Int, end: Int): List<LocalDate> {
+    val firstDate = LocalDate.now() // today()
+    // TODO firstDate.firstDayOfWeek = firstDayOfWeek
+    return (start..end).map { firstDate.plusDays(it - 1L) }
 }
 
-internal val Calendar.isWeekend: Boolean
-    get() = dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY
+internal val LocalDate.isWeekend: Boolean
+    get() = dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY
 
 internal fun Calendar.withYear(year: Int): Calendar {
     return copy().apply { set(Calendar.YEAR, year) }

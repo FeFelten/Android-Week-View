@@ -8,17 +8,19 @@ import androidx.annotation.ColorRes
 import androidx.annotation.DimenRes
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.Calendar
 
 data class WeekViewEvent<T> internal constructor(
-    val id: Long = 0L,
+    internal val id: Long = 0L,
     internal val titleResource: TextResource,
-    val startTime: Calendar = now(),
-    val endTime: Calendar = now(),
     internal val locationResource: TextResource? = null,
-    val isAllDay: Boolean = false,
-    val style: Style = Style(),
-    val data: T
+    internal val startTime: LocalDateTime = LocalDateTime.now(),
+    internal val endTime: LocalDateTime = LocalDateTime.now(),
+    internal val isAllDay: Boolean = false,
+    internal val style: Style = Style(),
+    internal val data: T
 ) : WeekViewDisplayable<T> {
 
     override fun toWeekViewEvent(): WeekViewEvent<T> = this
@@ -68,7 +70,7 @@ data class WeekViewEvent<T> internal constructor(
         internal var borderWidthResource: DimenResource? = null
         internal var borderColorResource: ColorResource? = null
 
-        @Deprecated("No longer used.")
+        @Deprecated("Remove with setTextStrikeThrough() in the future.")
         internal var isTextStrikeThrough: Boolean = false
 
         class Builder {
@@ -100,7 +102,7 @@ data class WeekViewEvent<T> internal constructor(
             }
 
             @PublicApi
-            @Deprecated("Use a SpannableString for the title or location instead.")
+            @Deprecated("Use a SpannableString for the title or location instead. This method will be removed in the future.")
             fun setTextStrikeThrough(strikeThrough: Boolean): Builder {
                 style.isTextStrikeThrough = strikeThrough
                 return this
@@ -135,15 +137,15 @@ data class WeekViewEvent<T> internal constructor(
         }
     }
 
-    class Builder<T : Any> @JvmOverloads constructor(
-        private var data: T? = null
+    class Builder<T : Any>(
+        private val data: T
     ) {
 
         private var id: Long? = null
         private var title: TextResource? = null
         private var location: TextResource? = null
-        private var startTime: Calendar? = null
-        private var endTime: Calendar? = null
+        private var startTime: LocalDateTime? = null
+        private var endTime: LocalDateTime? = null
         private var style: Style? = null
         private var isAllDay: Boolean = false
 
@@ -166,18 +168,6 @@ data class WeekViewEvent<T> internal constructor(
         }
 
         @PublicApi
-        fun setStartTime(startTime: Calendar): Builder<T> {
-            this.startTime = startTime
-            return this
-        }
-
-        @PublicApi
-        fun setEndTime(endTime: Calendar): Builder<T> {
-            this.endTime = endTime
-            return this
-        }
-
-        @PublicApi
         fun setLocation(location: CharSequence): Builder<T> {
             this.location = TextResource.Value(location)
             return this
@@ -187,6 +177,36 @@ data class WeekViewEvent<T> internal constructor(
         fun setLocation(resId: Int): Builder<T> {
             this.location = TextResource.Id(resId)
             return this
+        }
+
+        @PublicApi
+        fun setStartTime(startTime: LocalDateTime): Builder<T> {
+            this.startTime = startTime
+            return this
+        }
+
+        @PublicApi
+        @Deprecated(
+            message = "Use setStartTime(LocalDateTime) instead. This method will be removed in the future.",
+            replaceWith = ReplaceWith("setStartTime(LocalDateTime.ofInstant(endTime.toInstant(), ZoneId.systemDefault()))", "java.time.LocalDateTime", "java.time.ZoneId")
+        )
+        fun setStartTime(startTime: Calendar): Builder<T> {
+            return setStartTime(LocalDateTime.ofInstant(startTime.toInstant(), ZoneId.systemDefault()))
+        }
+
+        @PublicApi
+        fun setEndTime(endTime: LocalDateTime): Builder<T> {
+            this.endTime = endTime
+            return this
+        }
+
+        @PublicApi
+        @Deprecated(
+            message = "Use setEndTime(LocalDateTime) instead. This method will be removed in the future.",
+            replaceWith = ReplaceWith("setEndTime(LocalDateTime.ofInstant(endTime.toInstant(), ZoneId.systemDefault()))", "java.time.LocalDateTime", "java.time.ZoneId")
+        )
+        fun setEndTime(endTime: Calendar): Builder<T> {
+            return setEndTime(LocalDateTime.ofInstant(endTime.toInstant(), ZoneId.systemDefault()))
         }
 
         @PublicApi
@@ -203,13 +223,12 @@ data class WeekViewEvent<T> internal constructor(
 
         @PublicApi
         fun build(): WeekViewEvent<T> {
-            val id = checkNotNull(id) { "id == null" }
-            val title = checkNotNull(title) { "title == null" }
-            val startTime = checkNotNull(startTime) { "startTime == null" }
-            val endTime = checkNotNull(endTime) { "endTime == null" }
-            val data = checkNotNull(data) { "data == null" }
+            val id = checkNotNull(id) { "id cannot be null" }
+            val title = checkNotNull(title) { "title cannot be null" }
+            val startTime = checkNotNull(startTime) { "startTime cannot be null" }
+            val endTime = checkNotNull(endTime) { "endTime cannot be null" }
             val style = this.style ?: Style.Builder().build()
-            return WeekViewEvent(id, title, startTime, endTime, location, isAllDay, style, data)
+            return WeekViewEvent(id, title, location, startTime, endTime, isAllDay, style, data)
         }
     }
 }

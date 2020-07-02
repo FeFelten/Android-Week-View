@@ -4,6 +4,8 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
+import java.time.temporal.WeekFields
+import java.util.Locale
 import kotlin.math.roundToInt
 
 internal class HeaderRowDrawer(
@@ -33,7 +35,8 @@ internal class HeaderRowDrawer(
     }
 
     private fun Canvas.drawWeekNumber() {
-        val weekNumber = viewState.dateRange.first().weekOfYear.toString()
+        val field = WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear()
+        val weekNumber = viewState.dateRange.first().get(field).toString()
 
         val bounds = viewState.weekNumberBounds
         val textPaint = viewState.weekNumberTextPaint

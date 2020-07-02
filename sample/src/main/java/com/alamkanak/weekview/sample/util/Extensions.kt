@@ -9,10 +9,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Calendar
-import org.threeten.bp.DateTimeUtils
-import org.threeten.bp.LocalDate
-import org.threeten.bp.ZoneId
 
 inline fun <reified T : View> Activity.lazyView(
     @IdRes viewId: Int
@@ -25,7 +24,7 @@ inline fun <reified T : View> Fragment.lazyView(
 fun LocalDate.toCalendar(): Calendar {
     val instant = atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()
     val calendar = Calendar.getInstance()
-    calendar.time = DateTimeUtils.toDate(instant)
+    calendar.timeInMillis = instant.toEpochMilli()
     return calendar
 }
 

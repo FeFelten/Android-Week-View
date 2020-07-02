@@ -6,10 +6,10 @@ import android.view.accessibility.AccessibilityEvent
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.customview.widget.ExploreByTouchHelper
-import java.text.DateFormat.LONG
-import java.text.DateFormat.SHORT
-import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.time.format.FormatStyle.SHORT
 import kotlin.math.roundToInt
 
 internal class WeekViewAccessibilityTouchHelper<T : Any>(
@@ -20,8 +20,8 @@ internal class WeekViewAccessibilityTouchHelper<T : Any>(
     private val eventChipsCache: EventChipsCache<T>
 ) : ExploreByTouchHelper(view) {
 
-    private val dateFormatter = SimpleDateFormat.getDateInstance(LONG)
-    private val dateTimeFormatter = SimpleDateFormat.getDateTimeInstance(LONG, SHORT)
+    private val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
+    private val dateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, SHORT)
 
     private val store = VirtualViewIdStore<T>()
 
@@ -35,7 +35,7 @@ internal class WeekViewAccessibilityTouchHelper<T : Any>(
 
         // If no event chip was hit, we still want to inform the user what date they
         // just interacted with
-        val date = touchHandler.calculateTimeFromPoint(x, y)?.atStartOfDay
+        val date = touchHandler.calculateTimeFromPoint(x, y)
         val dateVirtualViewId = date?.let { store[it] }
         if (dateVirtualViewId != null) {
             return dateVirtualViewId
@@ -48,7 +48,8 @@ internal class WeekViewAccessibilityTouchHelper<T : Any>(
         val dateRange = viewState.dateRange
         val visibleEventChips = eventChipsCache.allEventChipsInDateRange(dateRange)
         virtualViewIds += store.put(visibleEventChips)
-        virtualViewIds += dateRange.map { store.put(it) }
+        // TODO
+        //  virtualViewIds += dateRange.map { store.put(it) }
     }
 
     override fun onPerformActionForVirtualView(
@@ -57,7 +58,7 @@ internal class WeekViewAccessibilityTouchHelper<T : Any>(
         arguments: Bundle?
     ): Boolean {
         val eventChip = store.findEventChip(virtualViewId)
-        val date = store.findDate(virtualViewId)
+        val date = store.findDateTime(virtualViewId)
 
         return when {
             eventChip != null -> onPerformActionForEventChip(virtualViewId, eventChip, action)
@@ -91,7 +92,7 @@ internal class WeekViewAccessibilityTouchHelper<T : Any>(
 
     private fun onPerformActionForDate(
         virtualViewId: Int,
-        date: Calendar,
+        date: LocalDateTime,
         action: Int
     ): Boolean {
         return when (action) {
@@ -119,7 +120,7 @@ internal class WeekViewAccessibilityTouchHelper<T : Any>(
             return
         }
 
-        val date = store.findDate(virtualViewId)
+        val date = store.findDateTime(virtualViewId)
         if (date != null) {
             populateNodeWithDateInfo(date, node)
             return
@@ -138,12 +139,12 @@ internal class WeekViewAccessibilityTouchHelper<T : Any>(
         node.addAction(AccessibilityActionCompat.ACTION_LONG_CLICK)
 
         val bounds = Rect()
-        eventChip.bounds?.round(bounds)
+        eventChip.bounds.round(bounds)
         node.setBoundsInParent(bounds)
     }
 
     private fun populateNodeWithDateInfo(
-        date: Calendar,
+        date: LocalDateTime,
         node: AccessibilityNodeInfoCompat
     ) {
         node.contentDescription = createDescriptionForVirtualView(date)
@@ -152,7 +153,7 @@ internal class WeekViewAccessibilityTouchHelper<T : Any>(
         node.addAction(AccessibilityActionCompat.ACTION_LONG_CLICK)
 
         val dateWithStartPixel = viewState.dateRangeWithStartPixels
-            .firstOrNull { it.first == date } ?: return
+            .firstOrNull { it.first == date.toLocalDate() } ?: return
 
         val left = dateWithStartPixel.second.roundToInt()
         val right = left + viewState.totalDayWidth.roundToInt()
@@ -164,19 +165,19 @@ internal class WeekViewAccessibilityTouchHelper<T : Any>(
     }
 
     private fun createDescriptionForVirtualView(event: ResolvedWeekViewEvent<T>): String {
-        val date = dateTimeFormatter.format(event.startTime.time)
+        val date = dateTimeFormatter.format(event.startTime)
         return "$date: ${event.title}, ${event.location}"
     }
 
-    private fun createDescriptionForVirtualView(date: Calendar): String {
-        return dateFormatter.format(date.time)
+    private fun createDescriptionForVirtualView(date: LocalDateTime): String {
+        return dateFormatter.format(date)
     }
 }
 
 private class VirtualViewIdStore<T> {
 
     private val eventChips = mutableListOf<EventChip<T>>()
-    private val dates = mutableListOf<Calendar>()
+    private val dateTimes = mutableListOf<LocalDateTime>()
 
     private val eventChipVirtualViewIds = mutableListOf<Int>()
     private val dateVirtualViewIds = mutableListOf<Int>()
@@ -188,8 +189,8 @@ private class VirtualViewIdStore<T> {
         return eventChipVirtualViewIds[index]
     }
 
-    operator fun get(date: Calendar): Int? {
-        val index = dates.indexOf(date)
+    operator fun get(date: LocalDateTime): Int? {
+        val index = dateTimes.indexOf(date)
         return dateVirtualViewIds[index]
     }
 
@@ -200,21 +201,20 @@ private class VirtualViewIdStore<T> {
         return if (index != -1) eventChips[index] else null
     }
 
-    fun findDate(
+    fun findDateTime(
         virtualViewId: Int
-    ): Calendar? {
+    ): LocalDateTime? {
         val index = dateVirtualViewIds.indexOfFirst { it == virtualViewId }
-        return if (index != -1) dates[index] else null
+        return if (index != -1) dateTimes[index] else null
     }
 
-    fun put(date: Calendar): Int {
-        val startOfDay = date.atStartOfDay
-        val index = dates.indexOf(startOfDay)
+    fun put(date: LocalDateTime): Int {
+        val index = dateTimes.indexOf(date)
 
         return if (index != -1) {
             dateVirtualViewIds[index]
         } else {
-            dates += date
+            dateTimes += date
             dateVirtualViewIds += maximumId
             maximumId++
         }

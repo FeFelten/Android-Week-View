@@ -7,12 +7,17 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.text.TextPaint
-import java.util.Calendar
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.Period
+import java.time.temporal.TemporalAdjusters
+import java.time.temporal.WeekFields
+import java.util.Locale
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
-typealias DateFormatter = (Calendar) -> String
+typealias DateFormatter = (LocalDate) -> String
 typealias TimeFormatter = (Int) -> String
 
 internal class ViewState constructor(private val config: Config) {
@@ -205,11 +210,11 @@ internal class ViewState constructor(private val config: Config) {
 
     var newHourHeight: Float = 0f
 
-    var minDate: Calendar? = null
-    var maxDate: Calendar? = null
+    var minDate: LocalDate? = null
+    var maxDate: LocalDate? = null
 
     var dateFormatter: DateFormatter = { date ->
-        defaultDateFormatter(numberOfDays = numberOfVisibleDays).format(date.time)
+        defaultDateFormatter(numberOfDays = numberOfVisibleDays).format(date)
     }
 
     private var _timeFormatter: TimeFormatter = { hour ->
@@ -289,7 +294,7 @@ internal class ViewState constructor(private val config: Config) {
     val minX: Float
         get() {
             return maxDate?.let {
-                val date = it - Days(numberOfVisibleDays - 1)
+                val date = it.minusDays(numberOfVisibleDays - 1L)
                 getXOriginForDate(date)
             } ?: Float.NEGATIVE_INFINITY
         }
@@ -374,7 +379,7 @@ internal class ViewState constructor(private val config: Config) {
         }
 
     var firstDayOfWeek: Int
-        get() = config.firstDayOfWeek ?: now().firstDayOfWeek
+        get() = config.firstDayOfWeek ?: WeekFields.of(Locale.getDefault()).firstDayOfWeek.value // now().firstDayOfWeek
         set(value) {
             config.firstDayOfWeek = value
         }
@@ -638,7 +643,7 @@ internal class ViewState constructor(private val config: Config) {
             config.typeface = value
         }
 
-    var scrollToDate: Calendar? = null
+    var scrollToDate: LocalDate? = null
     var scrollToHour: Int? = null
 
     var viewWidth: Int = 0
@@ -647,13 +652,13 @@ internal class ViewState constructor(private val config: Config) {
     var isFirstDraw = true
     var areDimensionsInvalid = true
 
-    var firstVisibleDate: Calendar = today()
+    var firstVisibleDate: LocalDate = LocalDate.now()
 
     private var startPixel = 0f
 
     val startPixels = mutableListOf<Float>()
-    val dateRange = mutableListOf<Calendar>()
-    val dateRangeWithStartPixels = mutableListOf<Pair<Calendar, Float>>()
+    val dateRange = mutableListOf<LocalDate>()
+    val dateRangeWithStartPixels = mutableListOf<Pair<LocalDate, Float>>()
 
     fun updateDrawingContext() {
         val originX = currentOrigin.x
@@ -723,8 +728,9 @@ internal class ViewState constructor(private val config: Config) {
         widthPerDay = availableWidth / numberOfVisibleDays
     }
 
-    fun getXOriginForDate(date: Calendar): Float {
-        return -1f * date.daysFromToday * totalDayWidth
+    fun getXOriginForDate(date: LocalDate): Float {
+        val daysFromToday = Period.between(LocalDate.now(), date/*.plusDays(1L)*/).days
+        return -1f * daysFromToday * totalDayWidth
     }
 
     fun updateAllDayEventHeight(height: Int) {
@@ -735,9 +741,9 @@ internal class ViewState constructor(private val config: Config) {
     private fun moveCurrentOriginIfFirstDraw() {
         // If the week view is being drawn for the first time, then consider the first day of the
         // week.
-        val today = today()
+        val today = LocalDate.now() // today()
         val isWeekView = numberOfVisibleDays >= 7
-        val currentDayIsNotToday = today.dayOfWeek != firstDayOfWeek
+        val currentDayIsNotToday = today.dayOfWeek.value != firstDayOfWeek
 
         if (isWeekView && currentDayIsNotToday && showFirstDayOfWeekFirst) {
             val difference = today.computeDifferenceWithFirstDayOfWeek()
@@ -775,31 +781,25 @@ internal class ViewState constructor(private val config: Config) {
      * Returns the provided date, if it is within [minDate] and [maxDate]. Otherwise, it returns
      * [minDate] or [maxDate].
      */
-    fun getDateWithinDateRange(date: Calendar): Calendar {
+    fun getDateWithinDateRange(date: LocalDate): LocalDate {
         val minDate = minDate ?: date
         val maxDate = maxDate ?: date
 
         return if (date.isBefore(minDate)) {
             minDate
         } else if (date.isAfter(maxDate)) {
-            maxDate + Days(1 - numberOfVisibleDays)
+            maxDate.plusDays(1L - numberOfVisibleDays)
         } else if (numberOfVisibleDays >= 7 && showFirstDayOfWeekFirst) {
             val diff = date.computeDifferenceWithFirstDayOfWeek()
-            date - Days(diff)
+            date.minusDays(diff)
         } else {
             date
         }
     }
 
-    private fun Calendar.computeDifferenceWithFirstDayOfWeek(): Int {
-        val firstDayOfWeek = firstDayOfWeek
-        return if (firstDayOfWeek == Calendar.MONDAY && dayOfWeek == Calendar.SUNDAY) {
-            // Special case, because Calendar.MONDAY has constant value 2 and Calendar.SUNDAY has
-            // constant value 1. The correct result to return is 6 days, not -1 days.
-            6
-        } else {
-            dayOfWeek - firstDayOfWeek
-        }
+    private fun LocalDate.computeDifferenceWithFirstDayOfWeek(): Long {
+        val startOfWeek = DayOfWeek.of(firstDayOfWeek)
+        return with(TemporalAdjusters.previousOrSame(startOfWeek)).until(this).days.toLong()
     }
 
     private fun refreshAfterZooming() {

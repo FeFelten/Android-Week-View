@@ -6,12 +6,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import com.alamkanak.weekview.WeekView
+import com.alamkanak.weekview.WeekViewEvent
 import com.alamkanak.weekview.sample.data.EventsApi
 import com.alamkanak.weekview.sample.data.model.ApiEvent
 import com.alamkanak.weekview.sample.util.lazyView
 import com.alamkanak.weekview.sample.util.setupWithWeekView
 import com.alamkanak.weekview.sample.util.showToast
-import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import kotlinx.android.synthetic.main.view_toolbar.toolbar
 
 private data class AsyncViewState(
@@ -35,6 +37,7 @@ private class AsyncViewModel(
 
     fun remove(event: ApiEvent) {
         val allEvents = viewState.value?.events ?: return
+        val event2 = WeekViewEvent.Builder(1).build()
         viewState.value = AsyncViewState(events = allEvents.minus(event))
     }
 }
@@ -81,8 +84,9 @@ class AsyncActivity : AppCompatActivity() {
         }
 
         weekView.setOnEmptyViewLongClickListener { time ->
-            val sdf = SimpleDateFormat.getDateTimeInstance()
-            showToast("Empty view long-clicked at ${sdf.format(time.time)}")
+            // val sdf = SimpleDateFormat.getDateTimeInstance()
+            val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
+            showToast("Empty view long-clicked at ${formatter.format(time)}")
         }
     }
 }

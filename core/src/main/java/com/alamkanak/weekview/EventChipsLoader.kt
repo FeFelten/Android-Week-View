@@ -1,7 +1,7 @@
 package com.alamkanak.weekview
 
 import com.alamkanak.weekview.EventChipsLoader.CollisionGroup
-import java.util.Calendar
+import java.time.LocalDate
 
 internal class EventChipsLoader<T>(private val viewState: ViewState) {
 
@@ -209,8 +209,8 @@ internal class EventChipsLoader<T>(private val viewState: ViewState) {
         return results
     }
 
-    private fun List<EventChip<T>>.groupedByDate(): Map<Calendar, List<EventChip<T>>> {
-        return groupBy { it.event.startTime.atStartOfDay }
+    private fun List<EventChip<T>>.groupedByDate(): Map<LocalDate, List<EventChip<T>>> {
+        return groupBy { it.event.startTime.toLocalDate() }
     }
 }
 

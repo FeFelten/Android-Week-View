@@ -10,6 +10,7 @@ import com.alamkanak.weekview.sample.R
 import com.alamkanak.weekview.sample.data.model.Event
 import java.text.DateFormat
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.Calendar
 
 class EventsDatabase(context: Context) {
@@ -20,11 +21,11 @@ class EventsDatabase(context: Context) {
     private val color4 = ContextCompat.getColor(context, R.color.event_color_04)
 
     fun getEventsInRange(
-        startDate: Calendar,
-        endDate: Calendar
+        startDate: LocalDate,
+        endDate: LocalDate
     ): List<WeekViewDisplayable<Event>> {
-        val year = startDate.get(Calendar.YEAR)
-        val month = startDate.get(Calendar.MONTH)
+        val year = startDate.year
+        val month = startDate.monthValue
 
         val idOffset = year + 10L * month
         val events = mutableListOf<WeekViewDisplayable<Event>>()
@@ -36,7 +37,7 @@ class EventsDatabase(context: Context) {
             dayOfMonth = 28,
             hour = 16,
             minute = 0,
-            duration = 90,
+            durationInMinutes = 90,
             color = color1
         )
 
@@ -48,7 +49,7 @@ class EventsDatabase(context: Context) {
             dayOfMonth = 27,
             hour = 20,
             minute = 0,
-            duration = 5 * 60,
+            durationInMinutes = 5 * 60,
             color = color4
         )
 
@@ -59,7 +60,7 @@ class EventsDatabase(context: Context) {
             dayOfMonth = 28,
             hour = 9,
             minute = 30,
-            duration = 60,
+            durationInMinutes = 60,
             color = color4,
             isCanceled = true
         )
@@ -71,7 +72,7 @@ class EventsDatabase(context: Context) {
             dayOfMonth = 28,
             hour = 9,
             minute = 30,
-            duration = 60,
+            durationInMinutes = 60,
             color = color2
         )
 
@@ -82,7 +83,7 @@ class EventsDatabase(context: Context) {
             dayOfMonth = 28,
             hour = 10,
             minute = 30,
-            duration = 45,
+            durationInMinutes = 45,
             color = color3
         )
 
@@ -93,7 +94,7 @@ class EventsDatabase(context: Context) {
             dayOfMonth = 28,
             hour = 12,
             minute = 30,
-            duration = 2 * 60,
+            durationInMinutes = 2 * 60,
             color = color2
         )
 
@@ -104,7 +105,7 @@ class EventsDatabase(context: Context) {
             dayOfMonth = 17,
             hour = 11,
             minute = 0,
-            duration = 4 * 60,
+            durationInMinutes = 4 * 60,
             color = color3
         )
 
@@ -115,7 +116,7 @@ class EventsDatabase(context: Context) {
             dayOfMonth = 15,
             hour = 3,
             minute = 0,
-            duration = 3 * 60,
+            durationInMinutes = 3 * 60,
             color = color4,
             isCanceled = true
         )
@@ -127,7 +128,7 @@ class EventsDatabase(context: Context) {
             dayOfMonth = 1,
             hour = 9,
             minute = 0,
-            duration = 3 * 60,
+            durationInMinutes = 3 * 60,
             color = color1
         )
 
@@ -135,10 +136,10 @@ class EventsDatabase(context: Context) {
             id = idOffset + 10,
             year = year,
             month = month,
-            dayOfMonth = startDate.getActualMaximum(Calendar.DAY_OF_MONTH),
+            dayOfMonth = startDate.lengthOfMonth(),
             hour = 15,
             minute = 0,
-            duration = 3 * 60,
+            durationInMinutes = 3 * 60,
             color = color2
         )
 
@@ -148,9 +149,6 @@ class EventsDatabase(context: Context) {
             year = year,
             month = month,
             dayOfMonth = 28,
-            hour = 0,
-            minute = 0,
-            duration = 24 * 60,
             isAllDay = true,
             color = color4
         )
@@ -161,9 +159,6 @@ class EventsDatabase(context: Context) {
             year = year,
             month = month,
             dayOfMonth = 28,
-            hour = 0,
-            minute = 0,
-            duration = 24 * 60,
             isAllDay = true,
             color = color2
         )
@@ -174,9 +169,6 @@ class EventsDatabase(context: Context) {
             year = year,
             month = month,
             dayOfMonth = 14,
-            hour = 0,
-            minute = 0,
-            duration = 10 * 60,
             isAllDay = true,
             color = color4
         )
@@ -189,10 +181,10 @@ class EventsDatabase(context: Context) {
         year: Int,
         month: Int,
         dayOfMonth: Int,
-        hour: Int,
-        minute: Int,
-        duration: Int,
+        hour: Int = 0,
+        minute: Int = 0,
         color: Int,
+        durationInMinutes: Int = 60,
         isAllDay: Boolean = false,
         isCanceled: Boolean = false
     ): Event {
@@ -200,13 +192,21 @@ class EventsDatabase(context: Context) {
             set(Calendar.YEAR, year)
             set(Calendar.MONTH, month)
             set(Calendar.DAY_OF_MONTH, dayOfMonth)
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
+            set(Calendar.HOUR_OF_DAY, if (isAllDay) 0 else hour)
+            set(Calendar.MINUTE, if (isAllDay) 0 else minute)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
+
         val endTime = startTime.clone() as Calendar
-        endTime.add(Calendar.MINUTE, duration)
+        if (isAllDay) {
+            endTime.set(Calendar.HOUR, 23)
+            endTime.set(Calendar.MINUTE, 59)
+            endTime.set(Calendar.SECOND, 59)
+            endTime.set(Calendar.MILLISECOND, 999)
+        } else {
+            endTime.add(Calendar.MINUTE, durationInMinutes)
+        }
 
         val title = buildEventTitle(startTime)
 

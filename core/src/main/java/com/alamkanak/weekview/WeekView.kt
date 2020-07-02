@@ -11,9 +11,12 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.accessibility.AccessibilityManager
 import androidx.core.view.ViewCompat
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.Period
 import java.util.Calendar
 import kotlin.math.min
-import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 class WeekView<T : Any> @JvmOverloads constructor(
     context: Context,
@@ -124,7 +127,8 @@ class WeekView<T : Any> @JvmOverloads constructor(
         eventChipsCache.clear()
 
         if (events.isNotEmpty()) {
-            eventChipsCache += eventChipsLoader.createEventChips(events)
+            val chips = eventChipsLoader.createEventChips(events)
+            eventChipsCache += chips
         }
     }
 
@@ -175,16 +179,16 @@ class WeekView<T : Any> @JvmOverloads constructor(
         val visibleDays = viewState.numberOfVisibleDays
 
         val daysScrolled = viewState.currentOrigin.x / totalDayWidth
-        val delta = daysScrolled.roundToInt() * (-1)
+        val delta = daysScrolled.roundToLong() * (-1)
 
-        val firstVisibleDate = today() + Days(delta)
+        val firstVisibleDate = LocalDate.now().plusDays(delta) // today() + Days(delta)
         viewState.firstVisibleDate = firstVisibleDate
 
-        val hasFirstVisibleDayChanged = oldFirstVisibleDay.toEpochDays() != firstVisibleDate.toEpochDays()
+        val hasFirstVisibleDayChanged = oldFirstVisibleDay != firstVisibleDate
         if (hasFirstVisibleDayChanged) {
             scrollListener?.onFirstVisibleDateChanged(firstVisibleDate)
 
-            val lastVisibleDate = firstVisibleDate + Days(visibleDays - 1)
+            val lastVisibleDate = firstVisibleDate.plusDays(visibleDays - 1L)
             onRangeChangeListener?.onRangeChanged(firstVisibleDate, lastVisibleDate)
         }
     }
@@ -962,8 +966,8 @@ class WeekView<T : Any> @JvmOverloads constructor(
      * this date will not be shown.
      */
     @PublicApi
-    var minDate: Calendar?
-        get() = viewState.minDate?.copy()
+    var minDate: LocalDate?
+        get() = viewState.minDate
         set(value) {
             val maxDate = viewState.maxDate
             if (maxDate != null && value != null && value.isAfter(maxDate)) {
@@ -979,8 +983,8 @@ class WeekView<T : Any> @JvmOverloads constructor(
      * this date will not be shown.
      */
     @PublicApi
-    var maxDate: Calendar?
-        get() = viewState.maxDate?.copy()
+    var maxDate: LocalDate?
+        get() = viewState.maxDate
         set(value) {
             val minDate = viewState.minDate
             if (minDate != null && value != null && value.isBefore(minDate)) {
@@ -1108,15 +1112,15 @@ class WeekView<T : Any> @JvmOverloads constructor(
      * Returns the first visible date.
      */
     @PublicApi
-    val firstVisibleDate: Calendar
-        get() = viewState.firstVisibleDate.copy()
+    val firstVisibleDate: LocalDate
+        get() = viewState.firstVisibleDate
 
     /**
      * Returns the last visible date.
      */
     @PublicApi
-    val lastVisibleDate: Calendar
-        get() = viewState.firstVisibleDate.copy() + Days(viewState.numberOfVisibleDays - 1)
+    val lastVisibleDate: LocalDate
+        get() = viewState.firstVisibleDate.plusDays(numberOfVisibleDays - 1L)
 
     /**
      * Shows the current date.
@@ -1144,7 +1148,7 @@ class WeekView<T : Any> @JvmOverloads constructor(
      * @param date The date to show.
      */
     @PublicApi
-    fun goToDate(date: Calendar) {
+    fun goToDate(date: LocalDate) {
         val adjustedDate = viewState.getDateWithinDateRange(date)
         gestureHandler.forceScrollFinished()
 
@@ -1158,9 +1162,24 @@ class WeekView<T : Any> @JvmOverloads constructor(
 
         eventsLoader.requireRefresh()
 
-        val diff = adjustedDate.daysFromToday
+        val diff = Period.between(LocalDate.now(), date/*.plusDays(1L)*/).days // adjustedDate.daysFromToday
         viewState.currentOrigin.x = diff.toFloat() * (-1f) * viewState.totalDayWidth
         invalidate()
+    }
+
+    /**
+     * Shows a specific date. If it is before [minDate] or after [maxDate], these will be shown
+     * instead.
+     *
+     * @param date The date to show.
+     */
+    @PublicApi
+    @Deprecated(
+        message = "Use goToDate(LocalDate) instead. This method will be removed in the future.",
+        replaceWith = ReplaceWith("goToDate(LocalDate)")
+    )
+    fun goToDate(date: Calendar) {
+        goToDate(date.toLocalDate())
     }
 
     /**
@@ -1269,12 +1288,12 @@ class WeekView<T : Any> @JvmOverloads constructor(
 
     @PublicApi
     fun setOnMonthChangeListener(
-        block: (startDate: Calendar, endDate: Calendar) -> List<WeekViewDisplayable<T>>
+        block: (startDate: LocalDate, endDate: LocalDate) -> List<WeekViewDisplayable<T>>
     ) {
         onMonthChangeListener = object : OnMonthChangeListener<T> {
             override fun onMonthChange(
-                startDate: Calendar,
-                endDate: Calendar
+                startDate: LocalDate,
+                endDate: LocalDate
             ): List<WeekViewDisplayable<T>> {
                 return block(startDate, endDate)
             }
@@ -1308,10 +1327,10 @@ class WeekView<T : Any> @JvmOverloads constructor(
      */
     @PublicApi
     fun setOnLoadMoreListener(
-        block: (startDate: Calendar, endDate: Calendar) -> Unit
+        block: (startDate: LocalDate, endDate: LocalDate) -> Unit
     ) {
         onLoadMoreListener = object : OnLoadMoreListener {
-            override fun onLoadMore(startDate: Calendar, endDate: Calendar) {
+            override fun onLoadMore(startDate: LocalDate, endDate: LocalDate) {
                 block(startDate, endDate)
             }
         }
@@ -1344,10 +1363,10 @@ class WeekView<T : Any> @JvmOverloads constructor(
 
     @PublicApi
     fun setOnEmptyViewClickListener(
-        block: (time: Calendar) -> Unit
+        block: (time: LocalDateTime) -> Unit
     ) {
         onEmptyViewClickListener = object : OnEmptyViewClickListener {
-            override fun onEmptyViewClicked(time: Calendar) {
+            override fun onEmptyViewClicked(time: LocalDateTime) {
                 block(time)
             }
         }
@@ -1362,10 +1381,10 @@ class WeekView<T : Any> @JvmOverloads constructor(
 
     @PublicApi
     fun setOnEmptyViewLongClickListener(
-        block: (time: Calendar) -> Unit
+        block: (time: LocalDateTime) -> Unit
     ) {
         onEmptyViewLongClickListener = object : OnEmptyViewLongClickListener {
-            override fun onEmptyViewLongClick(time: Calendar) {
+            override fun onEmptyViewLongClick(time: LocalDateTime) {
                 block(time)
             }
         }
@@ -1380,10 +1399,10 @@ class WeekView<T : Any> @JvmOverloads constructor(
 
     @PublicApi
     fun setScrollListener(
-        block: (date: Calendar) -> Unit
+        block: (date: LocalDate) -> Unit
     ) {
         scrollListener = object : ScrollListener {
-            override fun onFirstVisibleDateChanged(date: Calendar) {
+            override fun onFirstVisibleDateChanged(date: LocalDate) {
                 block(firstVisibleDate)
             }
         }
@@ -1394,10 +1413,10 @@ class WeekView<T : Any> @JvmOverloads constructor(
 
     @PublicApi
     fun setOnRangeChangeListener(
-        block: (firstVisibleDate: Calendar, lastVisibleDate: Calendar) -> Unit
+        block: (firstVisibleDate: LocalDate, lastVisibleDate: LocalDate) -> Unit
     ) {
         onRangeChangeListener = object : OnRangeChangeListener {
-            override fun onRangeChanged(firstVisibleDate: Calendar, lastVisibleDate: Calendar) {
+            override fun onRangeChanged(firstVisibleDate: LocalDate, lastVisibleDate: LocalDate) {
                 block(firstVisibleDate, lastVisibleDate)
             }
         }
@@ -1407,17 +1426,24 @@ class WeekView<T : Any> @JvmOverloads constructor(
     @Deprecated("Use setDateFormatter() and setTimeFormatter() instead.")
     var dateTimeInterpreter: DateTimeInterpreter
         get() = object : DateTimeInterpreter {
-            override fun interpretDate(date: Calendar): String = viewState.dateFormatter(date)
+            override fun interpretDate(date: Calendar): String = viewState.dateFormatter(date.toLocalDate())
             override fun interpretTime(hour: Int): String = viewState.timeFormatter(hour)
         }
         set(value) {
-            setDateFormatter { value.interpretDate(it) }
+            setDateFormatter {
+                val calendar = Calendar.getInstance().apply {
+                    set(Calendar.YEAR, it.year)
+                    set(Calendar.MONTH, it.monthValue - 1)
+                    set(Calendar.DAY_OF_MONTH, it.dayOfMonth)
+                }
+                value.interpretDate(calendar)
+            }
             setTimeFormatter { value.interpretTime(it) }
             clearCaches()
         }
 
     @PublicApi
-    fun setDateFormatter(formatter: (Calendar) -> String) {
+    fun setDateFormatter(formatter: (LocalDate) -> String) {
         viewState.dateFormatter = formatter
     }
 

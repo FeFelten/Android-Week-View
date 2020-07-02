@@ -1,5 +1,6 @@
 package com.alamkanak.weekview
 
+import java.time.LocalDateTime
 import java.util.Calendar
 import kotlin.math.ceil
 import kotlin.math.max
@@ -39,7 +40,7 @@ internal class WeekViewTouchHandler<T : Any>(
     fun calculateTimeFromPoint(
         touchX: Float,
         touchY: Float
-    ): Calendar? {
+    ): LocalDateTime? {
         val widthPerDay = viewState.widthPerDay
         val totalDayWidth = widthPerDay + viewState.columnGap
         val originX = viewState.currentOrigin.x
@@ -60,7 +61,7 @@ internal class WeekViewTouchHandler<T : Any>(
             val isWithinDay = touchX in start..end
 
             if (isVisibleHorizontally && isWithinDay) {
-                val day = now() + Days(dayNumber - 1)
+                val day = LocalDateTime.now().plusDays(dayNumber - 1L)
 
                 val hourHeight = viewState.hourHeight
                 val pixelsFromMidnight = touchY - viewState.currentOrigin.y - viewState.headerHeight
@@ -69,7 +70,9 @@ internal class WeekViewTouchHandler<T : Any>(
                 val pixelsFromFullHour = pixelsFromMidnight - hour * hourHeight
                 val minutes = ((pixelsFromFullHour / hourHeight) * 60).toInt()
 
-                return day.withTime(viewState.minHour + hour, minutes)
+                return day
+                    .withHour(viewState.minHour + hour)
+                    .withMinute(minutes)
             }
 
             startPixel += totalDayWidth

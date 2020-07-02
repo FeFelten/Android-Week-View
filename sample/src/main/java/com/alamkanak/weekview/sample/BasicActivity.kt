@@ -11,16 +11,11 @@ import com.alamkanak.weekview.sample.util.lazyView
 import com.alamkanak.weekview.sample.util.observe
 import com.alamkanak.weekview.sample.util.setupWithWeekView
 import com.alamkanak.weekview.sample.util.showToast
-import com.alamkanak.weekview.sample.util.toCalendar
-import com.alamkanak.weekview.threetenabp.setOnEmptyViewClickListener
-import com.alamkanak.weekview.threetenabp.setOnLoadMoreListener
-import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
 import kotlinx.android.synthetic.main.view_toolbar.toolbar
-import org.threeten.bp.LocalDate
-import org.threeten.bp.LocalDateTime
-import org.threeten.bp.format.DateTimeFormatter
-import org.threeten.bp.format.FormatStyle
 
 private class ViewModel(
     private val database: EventsDatabase
@@ -28,14 +23,15 @@ private class ViewModel(
     val events = MutableLiveData<List<WeekViewDisplayable<Event>>>()
 
     fun fetchEvents(startDate: LocalDate, endDate: LocalDate) {
-        events.value = database.getEventsInRange(startDate.toCalendar(), endDate.toCalendar())
+        val results = database.getEventsInRange(startDate, endDate)
+        events.value = results
     }
 }
 
 class BasicActivity : AppCompatActivity() {
 
-    private val weekdayFormatter = SimpleDateFormat("EEE", Locale.getDefault())
-    private val dateFormatter = SimpleDateFormat("MM/dd", Locale.getDefault())
+    private val weekdayFormatter = DateTimeFormatter.ofPattern("EEE", Locale.getDefault())
+    private val dateFormatter = DateTimeFormatter.ofPattern("MM/dd", Locale.getDefault())
 
     private val weekView: WeekView<Event> by lazyView(R.id.weekView)
 
@@ -54,12 +50,12 @@ class BasicActivity : AppCompatActivity() {
         }
 
         weekView.setDateFormatter { date ->
-            val weekdayLabel = weekdayFormatter.format(date.time)
-            val dateLabel = dateFormatter.format(date.time)
+            val weekdayLabel = weekdayFormatter.format(date)
+            val dateLabel = dateFormatter.format(date)
             weekdayLabel + "\n" + dateLabel
         }
 
-        weekView.setOnLoadMoreListener { startDate: LocalDate, endDate: LocalDate ->
+        weekView.setOnLoadMoreListener { startDate, endDate ->
             viewModel.fetchEvents(startDate, endDate)
         }
 
@@ -71,7 +67,7 @@ class BasicActivity : AppCompatActivity() {
             showToast("Long-clicked ${event.title}")
         }
 
-        weekView.setOnEmptyViewClickListener { dateTime: LocalDateTime ->
+        weekView.setOnEmptyViewClickListener { dateTime ->
             val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
             showToast("Empty view clicked at ${formatter.format(dateTime)}")
         }

@@ -14,15 +14,16 @@ import com.alamkanak.weekview.OnEventLongClickListener;
 import com.alamkanak.weekview.OnMonthChangeListener;
 import com.alamkanak.weekview.WeekView;
 import com.alamkanak.weekview.WeekViewDisplayable;
-import com.alamkanak.weekview.sample.data.model.Event;
 import com.alamkanak.weekview.sample.data.EventsDatabase;
+import com.alamkanak.weekview.sample.data.model.Event;
 import com.alamkanak.weekview.sample.util.ToolbarUtils;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.List;
 
 import static android.widget.Toast.LENGTH_SHORT;
@@ -52,8 +53,8 @@ public class LegacyActivity extends AppCompatActivity
 
     @NotNull
     @Override
-    public List<WeekViewDisplayable<Event>> onMonthChange(@NonNull Calendar startDate,
-                                                          @NonNull Calendar endDate) {
+    public List<WeekViewDisplayable<Event>> onMonthChange(@NonNull LocalDate startDate,
+                                                          @NonNull LocalDate endDate) {
         return database.getEventsInRange(startDate, endDate);
     }
 
@@ -68,10 +69,11 @@ public class LegacyActivity extends AppCompatActivity
     }
 
     @Override
-    public void onEmptyViewLongClick(@NonNull Calendar time) {
-        DateFormat sdf = SimpleDateFormat.getDateTimeInstance();
-        String formattedTime = sdf.format(time.getTime());
-        Toast.makeText(this, "Empty view long pressed: " + formattedTime, LENGTH_SHORT).show();
+    public void onEmptyViewLongClick(@NonNull LocalDateTime time) {
+        // DateFormat sdf = SimpleDateFormat.getDateTimeInstance();
+        DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM);
+        // String formattedTime = sdf.format(time.getTime());
+        Toast.makeText(this, "Empty view long pressed: " + formatter.format(time), LENGTH_SHORT).show();
     }
 
 }
