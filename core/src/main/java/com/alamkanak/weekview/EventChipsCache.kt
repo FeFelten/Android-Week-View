@@ -2,18 +2,17 @@ package com.alamkanak.weekview
 
 import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.LinkedBlockingQueue
 
 internal class EventChipsCache<T> {
 
     val allEventChips: List<EventChip<T>>
         get() = normalEventChipsByDate.values.flatten() + allDayEventChipsByDate.values.flatten()
 
-    private val normalEventChipsByDate = ConcurrentHashMap<Long, MutableList<EventChip<T>>>()
-    private val allDayEventChipsByDate = ConcurrentHashMap<Long, MutableList<EventChip<T>>>()
+    private val normalEventChipsByDate = ConcurrentHashMap<Long, LinkedBlockingQueue<EventChip<T>>>()
+    private val allDayEventChipsByDate = ConcurrentHashMap<Long, LinkedBlockingQueue<EventChip<T>>>()
 
-    fun allEventChipsInDateRange(
-        dateRange: List<Calendar>
-    ): List<EventChip<T>> {
+    fun allEventChipsInDateRange(dateRange: List<Calendar>): List<EventChip<T>> {
         val results = mutableListOf<EventChip<T>>()
         for (date in dateRange) {
             results += allDayEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
@@ -22,17 +21,13 @@ internal class EventChipsCache<T> {
         return results
     }
 
-    fun normalEventChipsByDate(
-        date: Calendar
-    ): List<EventChip<T>> = normalEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
+    fun normalEventChipsByDate(date: Calendar): Collection<EventChip<T>> = normalEventChipsByDate[date.atStartOfDay.timeInMillis]
+            ?: mutableListOf()
 
-    fun allDayEventChipsByDate(
-        date: Calendar
-    ): List<EventChip<T>> = allDayEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
+    fun allDayEventChipsByDate(date: Calendar): Collection<EventChip<T>> = allDayEventChipsByDate[date.atStartOfDay.timeInMillis]
+            ?: mutableListOf()
 
-    fun allDayEventChipsInDateRange(
-        dateRange: List<Calendar>
-    ): List<EventChip<T>> {
+    fun allDayEventChipsInDateRange(dateRange: List<Calendar>): List<EventChip<T>> {
         val results = mutableListOf<EventChip<T>>()
         for (date in dateRange) {
             results += allDayEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
@@ -62,20 +57,18 @@ internal class EventChipsCache<T> {
         normalEventChipsByDate.clear()
     }
 
-    private fun <T> ConcurrentHashMap<Long, MutableList<EventChip<T>>>.addOrReplace(
-        key: Long,
-        eventChip: EventChip<T>
-    ) {
-        val results = getOrElse(key) { mutableListOf() }
-        val indexOfExisting = results.indexOfFirst { it.event.id == eventChip.event.id }
-        if (indexOfExisting != -1) {
-            // If an event with the same ID already exists, replace it. The new event will likely be
-            // more up-to-date.
-            results.removeAt(indexOfExisting)
-            results.add(indexOfExisting, eventChip)
-        } else {
-            results.add(eventChip)
-        }
+    private fun <T> ConcurrentHashMap<Long, LinkedBlockingQueue<EventChip<T>>>.addOrReplace(key: Long, eventChip: EventChip<T>) {
+        val results = getOrElse(key) { LinkedBlockingQueue() }
+        results.removeIf { it.event.id == eventChip.event.id }
+//        val indexOfExisting = results.indexOfFirst { it.event.id == eventChip.event.id }
+//        if (indexOfExisting != -1) {
+//            // If an event with the same ID already exists, replace it. The new event will likely be
+//            // more up-to-date.
+//            results.removeAt(indexOfExisting)
+//            results.add(indexOfExisting, eventChip)
+//        } else {
+        results.add(eventChip)
+//        }
 
         this[key] = results
     }

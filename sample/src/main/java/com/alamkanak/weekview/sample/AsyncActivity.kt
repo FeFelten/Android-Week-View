@@ -2,26 +2,22 @@ package com.alamkanak.weekview.sample
 
 import android.app.ProgressDialog
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import com.alamkanak.weekview.WeekView
+import com.alamkanak.weekview.WeekViewDisplayable
 import com.alamkanak.weekview.sample.data.EventsApi
-import com.alamkanak.weekview.sample.data.model.ApiEvent
 import com.alamkanak.weekview.sample.util.lazyView
 import com.alamkanak.weekview.sample.util.setupWithWeekView
 import com.alamkanak.weekview.sample.util.showToast
 import java.text.SimpleDateFormat
 import kotlinx.android.synthetic.main.view_toolbar.toolbar
 
-private data class AsyncViewState(
-    val events: List<ApiEvent> = emptyList(),
-    val isLoading: Boolean = false
-)
+private data class AsyncViewState(val events: List<WeekViewDisplayable<Any>> = emptyList(), val isLoading: Boolean = false)
 
-private class AsyncViewModel(
-    private val eventsApi: EventsApi
-) {
+private class AsyncViewModel(private val eventsApi: EventsApi) {
     val viewState = MutableLiveData<AsyncViewState>()
 
     init {
@@ -33,15 +29,15 @@ private class AsyncViewModel(
         viewState.value = AsyncViewState(it)
     }
 
-    fun remove(event: ApiEvent) {
+    /*fun remove(event: ApiEvent) {
         val allEvents = viewState.value?.events ?: return
         viewState.value = AsyncViewState(events = allEvents.minus(event))
-    }
+    }*/
 }
 
 class AsyncActivity : AppCompatActivity() {
 
-    private val weekView: WeekView<ApiEvent> by lazyView(R.id.weekView)
+    private val weekView: WeekView<Any> by lazyView(R.id.weekView)
 
     private val viewModel: AsyncViewModel by lazy {
         AsyncViewModel(EventsApi(this))
@@ -67,18 +63,18 @@ class AsyncActivity : AppCompatActivity() {
             } else {
                 progressDialog.dismiss()
             }
-
+            Log.d("AsyncActivity", "redraw events: list size" + viewState.events.size)
             weekView.submit(viewState.events)
         })
 
-        weekView.setOnEventClickListener { event, _ ->
+        /*     weekView.setOnEventClickListener { event, _ ->
             viewModel.remove(event)
             showToast("Removed ${event.title}")
         }
 
         weekView.setOnEventLongClickListener { event, _ ->
             showToast("Long-clicked ${event.title}")
-        }
+        }*/
 
         weekView.setOnEmptyViewLongClickListener { time ->
             val sdf = SimpleDateFormat.getDateTimeInstance()
