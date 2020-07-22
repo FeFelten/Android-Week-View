@@ -60,15 +60,7 @@ internal class EventChipsCache<T> {
     private fun <T> ConcurrentHashMap<Long, LinkedBlockingQueue<EventChip<T>>>.addOrReplace(key: Long, eventChip: EventChip<T>) {
         val results = getOrElse(key) { LinkedBlockingQueue() }
         results.removeIf { it.event.id == eventChip.event.id }
-//        val indexOfExisting = results.indexOfFirst { it.event.id == eventChip.event.id }
-//        if (indexOfExisting != -1) {
-//            // If an event with the same ID already exists, replace it. The new event will likely be
-//            // more up-to-date.
-//            results.removeAt(indexOfExisting)
-//            results.add(indexOfExisting, eventChip)
-//        } else {
         results.add(eventChip)
-//        }
 
         this[key] = results
     }
