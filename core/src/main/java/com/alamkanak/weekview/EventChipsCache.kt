@@ -2,18 +2,19 @@ package com.alamkanak.weekview
 
 import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.LinkedBlockingQueue
 
-internal class EventChipsCache<T> {
+internal class EventChipsCache {
 
-    val allEventChips: List<EventChip<T>>
+    val allEventChips: List<EventChip>
         get() = normalEventChipsByDate.values.flatten() + allDayEventChipsByDate.values.flatten()
 
-    private val normalEventChipsByDate = ConcurrentHashMap<Long, LinkedBlockingQueue<EventChip<T>>>()
-    private val allDayEventChipsByDate = ConcurrentHashMap<Long, LinkedBlockingQueue<EventChip<T>>>()
+    private val normalEventChipsByDate = ConcurrentHashMap<Long, MutableList<EventChip>>()
+    private val allDayEventChipsByDate = ConcurrentHashMap<Long, MutableList<EventChip>>()
 
-    fun allEventChipsInDateRange(dateRange: List<Calendar>): List<EventChip<T>> {
-        val results = mutableListOf<EventChip<T>>()
+    fun allEventChipsInDateRange(
+        dateRange: List<Calendar>
+    ): List<EventChip> {
+        val results = mutableListOf<EventChip>()
         for (date in dateRange) {
             results += allDayEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
             results += normalEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
@@ -21,21 +22,25 @@ internal class EventChipsCache<T> {
         return results
     }
 
-    fun normalEventChipsByDate(date: Calendar): Collection<EventChip<T>> = normalEventChipsByDate[date.atStartOfDay.timeInMillis]
-            ?: mutableListOf()
+    fun normalEventChipsByDate(
+        date: Calendar
+    ): List<EventChip> = normalEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
 
-    fun allDayEventChipsByDate(date: Calendar): Collection<EventChip<T>> = allDayEventChipsByDate[date.atStartOfDay.timeInMillis]
-            ?: mutableListOf()
+    fun allDayEventChipsByDate(
+        date: Calendar
+    ): List<EventChip> = allDayEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
 
-    fun allDayEventChipsInDateRange(dateRange: List<Calendar>): List<EventChip<T>> {
-        val results = mutableListOf<EventChip<T>>()
+    fun allDayEventChipsInDateRange(
+        dateRange: List<Calendar>
+    ): List<EventChip> {
+        val results = mutableListOf<EventChip>()
         for (date in dateRange) {
             results += allDayEventChipsByDate[date.atStartOfDay.timeInMillis].orEmpty()
         }
         return results
     }
 
-    private fun put(newChips: List<EventChip<T>>) {
+    private fun put(newChips: List<EventChip>) {
         for (eventChip in newChips) {
             val key = eventChip.event.startTime.atStartOfDay.timeInMillis
             if (eventChip.event.isAllDay) {
@@ -46,10 +51,10 @@ internal class EventChipsCache<T> {
         }
     }
 
-    operator fun plusAssign(newChips: List<EventChip<T>>) = put(newChips)
+    operator fun plusAssign(newChips: List<EventChip>) = put(newChips)
 
     fun clearSingleEventsCache() {
-        allEventChips.filter { it.originalEvent.isNotAllDay }.forEach(EventChip<T>::clearCache)
+        allEventChips.filter { it.originalEvent.isNotAllDay }.forEach(EventChip::clearCache)
     }
 
     fun clear() {
@@ -57,11 +62,20 @@ internal class EventChipsCache<T> {
         normalEventChipsByDate.clear()
     }
 
-    private fun <T> ConcurrentHashMap<Long, LinkedBlockingQueue<EventChip<T>>>.addOrReplace(key: Long, eventChip: EventChip<T>) {
-        val results = getOrElse(key) { LinkedBlockingQueue() }
-        results.removeIf { it.event.id == eventChip.event.id }
-        results.add(eventChip)
-
+    private fun ConcurrentHashMap<Long, MutableList<EventChip>>.addOrReplace(
+        key: Long,
+        eventChip: EventChip
+    ) {
+        val results = getOrElse(key) { mutableListOf() }
+        val indexOfExisting = results.indexOfFirst { it.event.id == eventChip.event.id }
+        if (indexOfExisting != -1) {
+            // If an event with the same ID already exists, replace it. The new event will likely be
+            // more up-to-date.
+            results.removeAt(indexOfExisting)
+            results.add(indexOfExisting, eventChip)
+        } else {
+            results.add(eventChip)
+        }
         this[key] = results
     }
 }

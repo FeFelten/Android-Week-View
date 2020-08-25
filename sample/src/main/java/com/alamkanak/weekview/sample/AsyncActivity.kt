@@ -1,18 +1,19 @@
 package com.alamkanak.weekview.sample
 
-import android.app.ProgressDialog
 import android.os.Bundle
-import android.util.Log
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import com.alamkanak.weekview.WeekView
 import com.alamkanak.weekview.WeekViewDisplayable
 import com.alamkanak.weekview.sample.data.EventsApi
-import com.alamkanak.weekview.sample.util.lazyView
 import com.alamkanak.weekview.sample.util.setupWithWeekView
 import com.alamkanak.weekview.sample.util.showToast
 import java.text.SimpleDateFormat
+import java.util.Calendar
+import kotlinx.android.synthetic.main.activity_basic.blockingProgressIndicator
+import kotlinx.android.synthetic.main.activity_basic.weekView
 import kotlinx.android.synthetic.main.view_toolbar.toolbar
 
 private data class AsyncViewState(val events: List<WeekViewDisplayable<Any>> = emptyList(), val isLoading: Boolean = false)
@@ -37,18 +38,8 @@ private class AsyncViewModel(private val eventsApi: EventsApi) {
 
 class AsyncActivity : AppCompatActivity() {
 
-    private val weekView: WeekView<Any> by lazyView(R.id.weekView)
-
     private val viewModel: AsyncViewModel by lazy {
         AsyncViewModel(EventsApi(this))
-    }
-
-    @Suppress("DEPRECATION")
-    private val progressDialog: ProgressDialog by lazy {
-        ProgressDialog(this).apply {
-            setCancelable(false)
-            setMessage("Loading events ...")
-        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,28 +48,40 @@ class AsyncActivity : AppCompatActivity() {
 
         toolbar.setupWithWeekView(weekView)
 
+        val adapter = AsyncActivityWeekViewAdapter(/*eventClickHandler = viewModel::remove*/)
+        weekView.adapter = adapter
+
         viewModel.viewState.observe(this, Observer { viewState ->
-            if (viewState.isLoading) {
-                progressDialog.show()
-            } else {
-                progressDialog.dismiss()
-            }
-            Log.d("AsyncActivity", "redraw events: list size" + viewState.events.size)
-            weekView.submit(viewState.events)
+            blockingProgressIndicator.isVisible = viewState.isLoading
+            adapter.submit(viewState.events)
         })
+    }
+}
 
-        /*     weekView.setOnEventClickListener { event, _ ->
-            viewModel.remove(event)
-            showToast("Removed ${event.title}")
-        }
+private var View.isVisible: Boolean
+    get() = visibility == View.VISIBLE
+    set(value) {
+        visibility = if (value) View.VISIBLE else View.GONE
+    }
 
-        weekView.setOnEventLongClickListener { event, _ ->
-            showToast("Long-clicked ${event.title}")
-        }*/
+private class AsyncActivityWeekViewAdapter : WeekView.SimpleAdapter<Any>() {
 
-        weekView.setOnEmptyViewLongClickListener { time ->
-            val sdf = SimpleDateFormat.getDateTimeInstance()
-            showToast("Empty view long-clicked at ${sdf.format(time.time)}")
-        }
+    private val formatter = SimpleDateFormat.getDateTimeInstance()
+
+    override fun onEventClick(data: Any) {
+        // eventClickHandler(data)
+        // context.showToast("Removed ${data.title}")
+    }
+
+    override fun onEmptyViewClick(time: Calendar) {
+        context.showToast("Empty view clicked at ${formatter.format(time.time)}")
+    }
+
+    override fun onEventLongClick(data: Any) {
+        // context.showToast("Long-clicked ${data.title}")
+    }
+
+    override fun onEmptyViewLongClick(time: Calendar) {
+        context.showToast("Empty view long-clicked at ${formatter.format(time.time)}")
     }
 }
